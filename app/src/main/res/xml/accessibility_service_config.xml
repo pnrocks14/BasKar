@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- packageNames limits events to the supported apps; the service narrows it further to the apps you chose. -->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged|typeViewScrolled"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagReportViewIds|flagIncludeNotImportantViews"
+    android:canRetrieveWindowContent="true"
+    android:canPerformGestures="false"
+    android:description="@string/accessibility_service_description"
+    android:isAccessibilityTool="false"
+    android:notificationTimeout="250"
+    android:packageNames="com.instagram.android,com.google.android.youtube,com.zhiliaoapp.musically,com.ss.android.ugc.trill"
+    android:summary="@string/accessibility_service_summary" />
