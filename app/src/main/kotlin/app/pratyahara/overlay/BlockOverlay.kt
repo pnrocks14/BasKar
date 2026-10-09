@@ -33,9 +33,9 @@ object OverlayCopy {
                 emoji = "🫠",
                 title = "ok that's your $budgetMinutes minutes for today",
                 body = if (state.unlocksLeft > 0) {
-                    "$s is done till tomorrow. feed, DMs and profile still work. if something really can't wait, earn ${UnlockRules.UNLOCK_MINUTES} more min by moving first."
+                    "no more $s till tomorrow. feed, DMs and profile still work. if something really can't wait, earn ${UnlockRules.UNLOCK_MINUTES} more min by moving first."
                 } else {
-                    "$s is done till tomorrow. feed, DMs and profile still work. go do something your future self will thank you for."
+                    "no more $s till tomorrow. feed, DMs and profile still work. go do something your future self will thank you for."
                 },
                 primaryLabel = if (state.unlocksLeft > 0) "earn ${UnlockRules.UNLOCK_MINUTES} min · $squats squats 🏋️" else null,
                 primaryRoute = if (state.unlocksLeft > 0) "unlock" else null,
