@@ -15,15 +15,16 @@ sealed interface Signal {
     }
 
     /**
-     * A scrollable pager or list filling the screen from near the top: the vertical full-screen player.
-     * Height coverage is loose because the bottom navigation often stays visible (Reels opened from Explore).
+     * A scrollable pager or list starting at the very top of the screen: the vertical full-screen player.
+     * A feed starts below the app's header, which is what tells the two apart. Height allows for a bottom
+     * navigation bar that stays visible (Reels opened from Explore).
      */
-    data class FullScreenPager(val widthCoverage: Double = 0.9, val heightCoverage: Double = 0.72) : Signal {
+    data class FullScreenPager(val widthCoverage: Double = 0.9, val heightCoverage: Double = 0.8) : Signal {
         override fun matches(s: UiSnapshot) = s.nodes.any { n ->
             n.scrollable &&
                 n.width >= s.screenWidth * widthCoverage &&
                 n.height >= s.screenHeight * heightCoverage &&
-                n.top <= s.screenHeight * 0.2 &&
+                n.top <= s.screenHeight * 0.04 &&
                 (n.className.orEmpty().contains("Pager") || n.className.orEmpty().contains("RecyclerView"))
         }
     }
@@ -78,12 +79,14 @@ sealed interface Signal {
 
     /**
      * A view ID containing one of [fragments] (Instagram calls Reels "clips" internally), except [exclude],
-     * on a view at least [minHeight] of the screen tall: the player itself, not a small preview of it.
+     * on a view at least [minHeight] of the screen tall starting at the top: the full-screen player itself,
+     * not a reel playing inside the home feed or a preview in a chat.
      */
     data class ViewIdContains(val fragments: Set<String>, val exclude: Set<String> = emptySet(), val minHeight: Double = 0.0) : Signal {
         override fun matches(s: UiSnapshot) = s.nodes.any { n ->
             val id = n.viewId ?: return@any false
-            id !in exclude && n.height >= s.screenHeight * minHeight && fragments.any { id.contains(it) }
+            id !in exclude && n.height >= s.screenHeight * minHeight && (minHeight == 0.0 || n.top <= s.screenHeight * 0.04) &&
+                fragments.any { id.contains(it) }
         }
     }
 

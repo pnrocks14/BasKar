@@ -13,5 +13,18 @@ object ServiceStatus {
         return enabled.split(':').any { ComponentName.unflattenFromString(it) == me }
     }
 
+    /**
+     * True when Android's own accessibility button or shortcut is assigned to Pratyahara. Android shows that
+     * button over every app, next to Pratyahara's own floating button.
+     */
+    fun systemShortcutOn(context: Context): Boolean = runCatching {
+        val me = ComponentName(context, ReelsAccessibilityService::class.java)
+        listOf("accessibility_button_targets", "accessibility_shortcut_target_service").any { key ->
+            Settings.Secure.getString(context.contentResolver, key).orEmpty().split(':').any {
+                ComponentName.unflattenFromString(it.trim()) == me
+            }
+        }
+    }.getOrDefault(false)
+
     fun settingsIntent(): Intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 }

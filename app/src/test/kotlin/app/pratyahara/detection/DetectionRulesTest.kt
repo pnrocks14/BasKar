@@ -90,6 +90,31 @@ class DetectionRulesTest {
         assertTrue(engine.evaluate(s)!!.isShortForm)
     }
 
+    /** Reported from a real phone: the home feed was paused. It plays reels inline and fills most of the screen. */
+    @Test fun `instagram home feed with a reel playing inline stays open`() {
+        val s = UiSnapshot(
+            DetectionRules.INSTAGRAM, w, h,
+            listOf(
+                n(cls = "androidx.recyclerview.widget.RecyclerView", scrollable = true, t = 150, r = w, b = 2250),
+                n(id = "clips_media_view", l = 0, t = 500, r = w, b = 1950),
+                tab("Home", true, 0), tab("Search and explore", false, 1), tab("Reels", false, 2),
+                n(text = "Original audio", t = 560, b = 600),
+            ) + listOf("Like", "Comment", "Share").mapIndexed { i, l -> n(desc = l, l = 20 + i * 110, t = 1980, r = 120 + i * 110, b = 2080) },
+        )
+        assertFalse(engine.evaluate(s)!!.isShortForm)
+    }
+
+    @Test fun `a reel opened from the home feed is still caught`() {
+        val s = UiSnapshot(
+            DetectionRules.INSTAGRAM, w, h,
+            listOf(
+                n(id = "clips_viewer_view_pager", cls = "androidx.viewpager.widget.ViewPager", scrollable = true, r = w, b = 2250),
+                tab("Home", true, 0),
+            ) + rightButtons("Like", "Comment", "Share").toList(),
+        )
+        assertTrue(engine.evaluate(s)!!.isShortForm)
+    }
+
     /** Reported from a real phone: reels opened from Explore kept scrolling. The bottom bar stays visible there. */
     @Test fun `instagram reel opened from explore`() {
         val s = UiSnapshot(

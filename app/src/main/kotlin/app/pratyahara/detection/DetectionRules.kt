@@ -40,8 +40,9 @@ object DetectionRules {
             WeightedSignal(SelectedTab(setOf("reels")), 3),
             WeightedSignal(ViewIdPresent(setOf("clips_viewer_view_pager", "clips_viewer_container", "clips_video_container")), 4),
             // Instagram's code calls Reels "clips"; the player keeps that name wherever it opens (Explore,
-            // a shared reel in DMs, a profile). Only big views count, so a reel preview in a chat doesn't.
-            WeightedSignal(ViewIdContains(setOf("clips_"), exclude = setOf("clips_tab"), minHeight = 0.5), 2),
+            // a shared reel in DMs, a profile). Only full-screen views count, so reels inside the home feed
+            // or a chat don't.
+            WeightedSignal(ViewIdContains(setOf("clips_"), exclude = setOf("clips_tab"), minHeight = 0.8), 2),
             // Posts opened from Explore scroll on forever too: the Explore tab plus a post's like/comment row.
             WeightedSignal(AllOf(listOf(SelectedTab(setOf("explore")), ActionRow(setOf("like", "comment", "share", "send")))), 4),
             WeightedSignal(FullScreenPager(), 2),
@@ -51,6 +52,8 @@ object DetectionRules {
             // still scores enough through the player's view ID and its buttons.
             WeightedSignal(AllLabelsPresent(setOf("posts", "followers", "following")), -4),
             WeightedSignal(ViewIdPresent(setOf("profile_header_container", "row_profile_header", "profile_header_bio_text", "profile_tab_layout")), -4),
+            // Reported from a real phone: the home feed was paused. A reel opened from it still scores enough.
+            WeightedSignal(SelectedTab(setOf("home")), -2),
         ),
         threshold = 4,
     )

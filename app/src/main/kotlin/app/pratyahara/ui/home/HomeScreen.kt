@@ -67,8 +67,10 @@ fun HomeScreen(go: (String) -> Unit) {
     val data by engine.store.data.collectAsStateWithLifecycle()
     val now = rememberNow(30_000)
     var serviceOn by remember { mutableStateOf(ServiceStatus.isEnabled(context)) }
+    var systemShortcut by remember { mutableStateOf(ServiceStatus.systemShortcutOn(context)) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         serviceOn = ServiceStatus.isEnabled(context)
+        systemShortcut = ServiceStatus.systemShortcutOn(context)
         scope.launch { engine.applyDuePending() }
     }
 
@@ -102,6 +104,19 @@ fun HomeScreen(go: (String) -> Unit) {
                     color = MaterialTheme.colorScheme.onTertiaryContainer,
                 )
                 PrimaryButton("Turn it back on", { context.startActivity(ServiceStatus.settingsIntent()) })
+            }
+        }
+
+        if (serviceOn && systemShortcut && data.bubbleEnabled) {
+            SoftCard(container = MaterialTheme.colorScheme.secondaryContainer) {
+                CardTitle("Seeing two Pratyahara buttons?", Ic.Lotus, MaterialTheme.colorScheme.onSecondaryContainer)
+                Text(
+                    "The one that shows over every app is Android's accessibility button. To keep only Pratyahara's own button, " +
+                        "which shows just inside Instagram and YouTube, open Accessibility, tap Pratyahara and switch off \"Pratyahara shortcut\". " +
+                        "Leave \"Use Pratyahara\" on, or blocking stops.",
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                )
+                PrimaryButton("Open accessibility settings", { context.startActivity(ServiceStatus.settingsIntent()) })
             }
         }
 
