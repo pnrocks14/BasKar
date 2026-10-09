@@ -85,7 +85,10 @@ class EndToEndTest {
         compose.waitForIdle()
     }
 
-    /** Waits for text to appear; screen changes that follow a DataStore write aren't tracked by Compose idling. */
+    /**
+     * Waits for our own UI through the Compose test clock. UiAutomator waits alone would not advance it,
+     * so the screen would never recompose. Screen changes after a DataStore write aren't tracked by idling either.
+     */
     @OptIn(ExperimentalTestApi::class)
     private fun waitForText(text: String, substring: Boolean = false) {
         compose.waitUntilAtLeastOneExists(hasText(text, substring = substring), 10_000)
@@ -96,6 +99,7 @@ class EndToEndTest {
 
     private fun shot(name: String) {
         val dir = File(context.filesDir, "screens").apply { mkdirs() }
+        runCatching { compose.waitForIdle() }
         device.waitForIdle()
         Thread.sleep(400)
         device.takeScreenshot(File(dir, "$name.png"))
@@ -227,7 +231,7 @@ class EndToEndTest {
         waitUntil(what = "the cooldown to start") { engine.lockState() is LockState.Cooldown }
 
         context.startActivity(MainActivity.intent(context, "cooldown").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-        assertTrue(device.wait(Until.hasObject(By.text("Nicely done")), 10_000))
+        waitForText("Nicely done")
         shot("12-cooldown")
         waitUntil(15_000, "the cooldown to end") { engine.lockState() is LockState.Allowed }
 
@@ -248,10 +252,10 @@ class EndToEndTest {
     @Test
     fun g_home_after_the_day() {
         context.startActivity(MainActivity.intent(context, "home").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-        device.wait(Until.hasObject(By.text("Pratyahara")), 10_000)
+        waitForText("Your wins")
         shot("14-home-after")
         context.startActivity(MainActivity.intent(context, "summary").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-        device.wait(Until.hasObject(By.text("Minutes on Reels and Shorts")), 10_000)
+        waitForText("Minutes on Reels and Shorts")
         shot("15-summary")
     }
 }
