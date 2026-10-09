@@ -117,13 +117,16 @@ jobs:
           path: app/build/reports/androidTests/
 
   # Pushing a tag like v0.1.0 publishes a GitHub Release with the APK attached.
+  # Every green push to main refreshes the test release for the app's current versionName.
   release:
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     needs: [build, emulator]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v5
+
       - uses: actions/download-artifact@v4
         with:
           name: pratyahara-debug-apk
@@ -132,12 +135,17 @@ jobs:
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.ref_name }}
         run: |
+          TAG="v$(sed -n 's/.*versionName = "\(.*\)".*/\1/p' app/build.gradle.kts)"
           src=$(ls apk/*.apk | head -1)
           cp "$src" Pratyahara.apk
           cp "$src" "Pratyahara-$TAG.apk"
-          gh release create "$TAG" Pratyahara.apk "Pratyahara-$TAG.apk" \
-            --repo "$GITHUB_REPOSITORY" \
-            --title "Pratyahara $TAG (test build)" \
-            --notes "Test build for sideloading. Install Pratyahara.apk on your phone; see the README section \"Testing on a real phone\". Package app.pratyahara.debug, signed with the public test key, so it is not the Play Store build."
+          notes="Test build for sideloading, from commit ${GITHUB_SHA::7}. Install Pratyahara.apk on your phone; see the README section \"Testing on a real phone\". Package app.pratyahara.debug, signed with the public test key, so it is not the Play Store build."
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh release upload "$TAG" Pratyahara.apk "Pratyahara-$TAG.apk" --clobber --repo "$GITHUB_REPOSITORY"
+            gh release edit "$TAG" --notes "$notes" --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$TAG" Pratyahara.apk "Pratyahara-$TAG.apk" \
+              --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --title "Pratyahara $TAG (test build)" --notes "$notes"
+          fi
