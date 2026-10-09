@@ -4,7 +4,7 @@ Pratyahara is **not** an accessibility tool (`isAccessibilityTool="false"`), so 
 
 ## Core functionality that uses the Accessibility API
 
-> Pratyahara is a digital wellbeing app that helps people limit compulsive short-form video scrolling. Users choose which apps to limit (for example Instagram, YouTube or TikTok). The AccessibilityService is restricted at runtime to those packages only. Within them it inspects the window's layout (selected navigation tab, full-screen video pager, the position of like/comment/share buttons, and view IDs) to recognise when the Reels or Shorts section is on screen. It uses this to (1) count minutes spent in that section against the user's own daily limit, (2) show a full-screen pause overlay (TYPE_ACCESSIBILITY_OVERLAY) when the limit is reached, and (3) perform the global Back action only when the user taps "Back to the feed" on that overlay. The rest of each app remains fully usable.
+> Pratyahara is a digital wellbeing app that helps people limit compulsive short-form video scrolling. Users choose which apps to limit (for example Instagram, YouTube or TikTok). The AccessibilityService is restricted at runtime to those packages only. Within them it inspects the window's layout (selected navigation tab, full-screen video pager, the position of like/comment/share buttons, and view IDs) to recognise when the Reels or Shorts section is on screen. It uses this to (1) count minutes spent in that section against the user's own daily limit, (2) show a full-screen pause overlay (TYPE_ACCESSIBILITY_OVERLAY) when the limit is reached, plus small non-interactive check-in messages at the top of the screen while the section is open (time left, and research quotes the user can switch off), (3) perform the global Back action only when the user taps "take me back to the feed" on that overlay, and (4) show today's remaining time when the user presses the accessibility shortcut. The rest of each app remains fully usable.
 
 ## Is personal or sensitive data collected or shared?
 
@@ -16,7 +16,7 @@ Pratyahara is **not** an accessibility tool (`isAccessibilityTool="false"`), so 
 
 ## Video
 
-Record a 30–60 second screen capture: onboarding disclosure → enabling the service → opening Instagram Reels → overlay after the limit → tapping "Back to the feed" → the home feed and DMs still working. Upload it unlisted to YouTube and paste the link.
+Record a 30–60 second screen capture: onboarding disclosure → enabling the service → opening Instagram Reels → overlay after the limit → tapping "take me back to the feed" → the home feed and DMs still working. Upload it unlisted to YouTube and paste the link.
 
 ## Data safety form
 
