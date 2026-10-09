@@ -3,7 +3,9 @@ package app.pratyahara
 import android.app.UiAutomation
 import android.content.Context
 import android.content.Intent
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -47,7 +49,8 @@ import java.io.File
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 class EndToEndTest {
 
-    @get:Rule(order = 0)
+    // Inner rule, so the failure screenshot is taken while the activity is still on screen.
+    @get:Rule(order = 1)
     val failureShots = object : TestWatcher() {
         override fun failed(e: Throwable?, description: Description) {
             runCatching {
@@ -59,7 +62,7 @@ class EndToEndTest {
         }
     }
 
-    @get:Rule(order = 1)
+    @get:Rule(order = 0)
     val compose = createAndroidComposeRule<MainActivity>()
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
@@ -80,6 +83,13 @@ class EndToEndTest {
         runBlocking { context.engine.finishOnboarding(DetectionRules.defaultPackages, 30, 90) }
         compose.waitUntil(5_000) { context.engine.store.current.onboarded }
         compose.waitForIdle()
+    }
+
+    /** Waits for text to appear; screen changes that follow a DataStore write aren't tracked by Compose idling. */
+    @OptIn(ExperimentalTestApi::class)
+    private fun waitForText(text: String, substring: Boolean = false) {
+        compose.waitUntilAtLeastOneExists(hasText(text, substring = substring), 10_000)
+        compose.onAllNodes(hasText(text, substring = substring))[0].performScrollTo().assertIsDisplayed()
     }
 
     private fun shell(cmd: String): String = device.executeShellCommand(cmd)
@@ -108,21 +118,21 @@ class EndToEndTest {
         shot("01-welcome")
         compose.onNodeWithText("Let's begin").performClick()
 
-        compose.onNodeWithText("Before you turn on blocking").assertIsDisplayed()
+        waitForText("Before you turn on blocking")
         shot("02-disclosure")
         compose.onNodeWithText("I understand", substring = true).performScrollTo().performClick()
         compose.onNodeWithText("Agree and continue").performScrollTo().performClick()
 
-        compose.onNodeWithText("Set your limits").assertIsDisplayed()
+        waitForText("Set your limits")
         shot("03-limits")
         compose.onNodeWithText("Continue").performScrollTo().performClick()
 
-        compose.onNodeWithText("Three switches").assertIsDisplayed()
+        waitForText("Three switches")
         shot("04-permissions")
         compose.onNodeWithText("Start", substring = true).performScrollTo().performClick()
 
         compose.waitUntil(5_000) { context.engine.store.current.onboarded }
-        compose.onNodeWithText("minutes left today", substring = true).performScrollTo().assertIsDisplayed()
+        waitForText("minutes left today", substring = true)
         shot("05-home")
         assertTrue(context.engine.store.current.disclosureAcceptedAt > 0)
     }
@@ -138,19 +148,20 @@ class EndToEndTest {
     @Test
     fun c_budget_raise_needs_a_reason_and_waits() {
         ensureOnboarded()
+        waitForText("Settings")
         compose.onNodeWithText("Settings").performScrollTo().performClick()
         compose.onNodeWithText("Change daily limit").performScrollTo().performClick()
         compose.onNodeWithText("+").performClick()
         compose.onNode(hasSetTextAction()).performTextInput("need it")
         compose.onNodeWithText("Ask for 35 min").performScrollTo().performClick()
-        compose.onNodeWithText("Give a real reason", substring = true).performScrollTo().assertIsDisplayed()
+        waitForText("Give a real reason", substring = true)
         shot("06-budget-rejected")
 
         compose.onNode(hasSetTextAction()).performTextReplacement(
             "My cousin's wedding videos were all posted as reels today. I promised her I would watch every one and send my favourites tonight."
         )
         compose.onNodeWithText("Ask for 35 min").performScrollTo().performClick()
-        compose.onNodeWithText("Your limit becomes 35 min", substring = true).performScrollTo().assertIsDisplayed()
+        waitForText("Your limit becomes 35 min", substring = true)
         shot("07-budget-scheduled")
         assertEquals(30, context.engine.store.current.budgetMinutes)
         assertEquals(1, context.engine.store.current.pending.size)
@@ -160,11 +171,12 @@ class EndToEndTest {
     fun d_nightly_task_validation() {
         ensureOnboarded()
         compose.activityRule.scenario.onActivity { it.startActivity(MainActivity.intent(it, "task")) }
+        waitForText("Save")
         compose.onNodeWithText("Save").performScrollTo().performClick()
-        compose.onNodeWithText("Write something first.").assertIsDisplayed()
+        waitForText("Write something first.")
         compose.onNode(hasSetTextAction()).performTextInput("idk")
         compose.onNodeWithText("Save").performScrollTo().performClick()
-        compose.onNodeWithText("isn't enough on its own", substring = true).assertIsDisplayed()
+        waitForText("isn't enough on its own", substring = true)
         shot("08-task-rejected")
     }
 
