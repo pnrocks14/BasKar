@@ -32,6 +32,8 @@ import org.junit.Before
 import org.junit.FixMethodOrder
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TestWatcher
+import org.junit.runner.Description
 import org.junit.runner.RunWith
 import org.junit.runners.MethodSorters
 import java.io.File
@@ -45,7 +47,19 @@ import java.io.File
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 class EndToEndTest {
 
-    @get:Rule
+    @get:Rule(order = 0)
+    val failureShots = object : TestWatcher() {
+        override fun failed(e: Throwable?, description: Description) {
+            runCatching {
+                val dir = File(context.filesDir, "screens").apply { mkdirs() }
+                val d = UiDevice.getInstance(instrumentation)
+                d.takeScreenshot(File(dir, "FAIL-${description.methodName}.png"))
+                d.dumpWindowHierarchy(File(dir, "FAIL-${description.methodName}.xml"))
+            }
+        }
+    }
+
+    @get:Rule(order = 1)
     val compose = createAndroidComposeRule<MainActivity>()
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
@@ -58,6 +72,14 @@ class EndToEndTest {
         Configurator.getInstance().uiAutomationFlags = UiAutomation.FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES
         device = UiDevice.getInstance(instrumentation)
         runBlocking { context.engine.store.loaded.first { it } }
+    }
+
+    /** Later tests start from a finished onboarding even if the onboarding test failed. */
+    private fun ensureOnboarded() {
+        if (context.engine.store.current.onboarded) return
+        runBlocking { context.engine.finishOnboarding(DetectionRules.defaultPackages, 30, 90) }
+        compose.waitUntil(5_000) { context.engine.store.current.onboarded }
+        compose.waitForIdle()
     }
 
     private fun shell(cmd: String): String = device.executeShellCommand(cmd)
@@ -100,7 +122,7 @@ class EndToEndTest {
         compose.onNodeWithText("Start", substring = true).performScrollTo().performClick()
 
         compose.waitUntil(5_000) { context.engine.store.current.onboarded }
-        compose.onNodeWithText("minutes left today", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("minutes left today", substring = true).performScrollTo().assertIsDisplayed()
         shot("05-home")
         assertTrue(context.engine.store.current.disclosureAcceptedAt > 0)
     }
@@ -115,6 +137,7 @@ class EndToEndTest {
 
     @Test
     fun c_budget_raise_needs_a_reason_and_waits() {
+        ensureOnboarded()
         compose.onNodeWithText("Settings").performScrollTo().performClick()
         compose.onNodeWithText("Change daily limit").performScrollTo().performClick()
         compose.onNodeWithText("+").performClick()
@@ -135,6 +158,7 @@ class EndToEndTest {
 
     @Test
     fun d_nightly_task_validation() {
+        ensureOnboarded()
         compose.activityRule.scenario.onActivity { it.startActivity(MainActivity.intent(it, "task")) }
         compose.onNodeWithText("Save").performScrollTo().performClick()
         compose.onNodeWithText("Write something first.").assertIsDisplayed()
@@ -147,6 +171,7 @@ class EndToEndTest {
     @Test
     fun e_reels_are_blocked_and_feed_stays_open() {
         assumeTrue("stand-in Instagram not installed", fakeInstaInstalled())
+        ensureOnboarded()
         waitUntil(15_000, "the accessibility service") { ReelsAccessibilityService.isRunning.value }
         val engine = context.engine
         val today = engine.today().toString()
