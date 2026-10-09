@@ -74,17 +74,21 @@ private val Dark = darkColorScheme(
     error = Color(0xFFFF9C7F),
 )
 
+// One type scale for the whole app. Body text is a step larger than Material's default so it reads easily.
 private val Type = Typography().run {
     copy(
-        displayLarge = TextStyle(fontSize = 88.sp, fontWeight = FontWeight.Black, lineHeight = 92.sp, letterSpacing = (-3).sp),
-        displaySmall = displaySmall.copy(fontWeight = FontWeight.Black, letterSpacing = (-1.5).sp),
-        headlineLarge = headlineLarge.copy(fontWeight = FontWeight.Black, letterSpacing = (-1).sp),
-        headlineMedium = headlineMedium.copy(fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.8).sp),
-        headlineSmall = headlineSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = (-0.4).sp),
-        titleLarge = titleLarge.copy(fontWeight = FontWeight.Bold, letterSpacing = (-0.2).sp),
-        titleMedium = titleMedium.copy(fontWeight = FontWeight.SemiBold),
-        bodyLarge = bodyLarge.copy(lineHeight = 24.sp),
-        labelLarge = labelLarge.copy(fontWeight = FontWeight.Bold),
+        displayLarge = TextStyle(fontSize = 80.sp, fontWeight = FontWeight.Black, lineHeight = 84.sp, letterSpacing = (-2.5).sp),
+        displaySmall = displaySmall.copy(fontWeight = FontWeight.Black, letterSpacing = (-1.2).sp),
+        headlineLarge = headlineLarge.copy(fontSize = 32.sp, lineHeight = 38.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.8).sp),
+        headlineMedium = headlineMedium.copy(fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.6).sp),
+        headlineSmall = headlineSmall.copy(fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.3).sp),
+        titleLarge = titleLarge.copy(fontSize = 20.sp, lineHeight = 26.sp, fontWeight = FontWeight.Bold),
+        titleMedium = titleMedium.copy(fontSize = 17.sp, lineHeight = 24.sp, fontWeight = FontWeight.SemiBold),
+        bodyLarge = bodyLarge.copy(fontSize = 17.sp, lineHeight = 26.sp),
+        bodyMedium = bodyMedium.copy(fontSize = 16.sp, lineHeight = 23.sp, letterSpacing = 0.1.sp),
+        bodySmall = bodySmall.copy(fontSize = 14.sp, lineHeight = 19.sp),
+        labelLarge = labelLarge.copy(fontSize = 15.sp, fontWeight = FontWeight.Bold),
+        labelMedium = labelMedium.copy(fontSize = 13.sp),
     )
 }
 

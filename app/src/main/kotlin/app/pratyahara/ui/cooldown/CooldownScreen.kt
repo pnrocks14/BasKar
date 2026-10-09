@@ -12,6 +12,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.pratyahara.core.lock.UnlockRules
 import app.pratyahara.engine
+import app.pratyahara.ui.components.CardTitle
+import app.pratyahara.ui.components.Ic
 import app.pratyahara.ui.components.Muted
 import app.pratyahara.ui.components.PrimaryButton
 import app.pratyahara.ui.components.Screen
@@ -28,24 +30,24 @@ fun CooldownScreen(onDone: () -> Unit) {
     val secondsLeft = ((data.cooldownUntil - now + 999) / 1000).coerceAtLeast(0)
     val nudge = remember { Nudges.forToday(System.currentTimeMillis() / 60_000) }
 
-    Screen("nicely done 💪", subtitle = "squats: done. now a tiny pause.") {
+    Screen("Nicely done", subtitle = "Squats done. Now a short pause.") {
         Text(
-            if (secondsLeft > 0) "$secondsLeft" else "✓",
+            if (secondsLeft > 0) "$secondsLeft" else "0",
             style = MaterialTheme.typography.displayLarge,
                         textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth(),
         )
         Muted(
-            if (secondsLeft > 0) "breathe in… breathe out… 🫧"
-            else "you've got ${UnlockRules.UNLOCK_MINUTES} more min. spend them on purpose ✌️"
+            if (secondsLeft > 0) "Breathe in, breathe out."
+            else "You've got ${UnlockRules.UNLOCK_MINUTES} more minutes. Spend them on purpose."
         )
         SoftCard {
-            Text("⏳ saved this week: ${formatMinutes(engine.weekSavedMinutes(data) * 60L)}", style = MaterialTheme.typography.titleLarge)
+            CardTitle("Saved this week: ${formatMinutes(engine.weekSavedMinutes(data) * 60L)}", Ic.Hourglass)
         }
         SoftCard(container = MaterialTheme.colorScheme.primaryContainer) {
-            Text("before you go back", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
+            Text("Before you go back", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
             Text(nudge, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
         }
-        PrimaryButton("done", onDone, enabled = secondsLeft == 0L)
+        PrimaryButton("Done", onDone, enabled = secondsLeft == 0L)
     }
 }

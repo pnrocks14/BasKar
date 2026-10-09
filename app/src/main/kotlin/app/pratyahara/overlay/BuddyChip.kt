@@ -16,7 +16,7 @@ import android.widget.TextView
 import app.pratyahara.core.buddy.Chip
 
 /**
- * The little message that slides in at the top while you scroll ("hii 👀 i'm watching you", a quote, a heads-up).
+ * The little message that slides in at the top while you scroll (a hello, a quote, a heads-up).
  * Drawn as an accessibility overlay. It ignores touches unless it has an [onTap], so scrolling carries on underneath.
  */
 class BuddyChip(private val service: AccessibilityService) {

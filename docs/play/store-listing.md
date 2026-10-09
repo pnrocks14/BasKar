@@ -13,6 +13,9 @@ Named after pratyahara, the yogic practice of drawing the senses back from what 
 • Limits only Reels (Instagram), Shorts (YouTube) and the TikTok video feed
 • A daily budget, 30 minutes by default, counted only while you're actually watching
 • Need more? Do 20 squats to earn 5 minutes. Your phone counts them.
+• A short breathing pause before Reels opens, so every visit is a choice.
+• Focus hours: Reels and Shorts stay closed at bedtime or study time.
+• A home-screen widget with your minutes left.
 • Raising your limit needs a real reason and a cooling-off wait; lowering it is instant
 • One task each night, one honest yes or no the next day, and a streak for honesty
 • A morning note from your past self

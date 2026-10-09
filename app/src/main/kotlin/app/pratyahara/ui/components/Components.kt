@@ -29,6 +29,9 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -49,6 +52,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
+import app.pratyahara.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -75,8 +81,10 @@ fun Screen(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             if (onBack != null) {
-                TextButton(onClick = onBack, contentPadding = PaddingValues(horizontal = 4.dp)) {
-                    Text("←  back", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
+                TextButton(onClick = onBack, contentPadding = PaddingValues(start = 2.dp, end = 10.dp)) {
+                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = null, tint = MaterialTheme.colorScheme.onBackground)
+                    Spacer(Modifier.width(6.dp))
+                    Text("Back", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
                 }
             } else {
                 Spacer(Modifier.height(12.dp))
@@ -145,23 +153,78 @@ fun SecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modi
     ) { Text(text, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center) }
 }
 
-/** A small rounded label, like "🔥 3 day streak". */
+/** A small rounded label with an optional icon, like a streak count. */
 @Composable
-fun Pill(text: String, container: Color = MaterialTheme.colorScheme.surfaceContainerHigh, content: Color = MaterialTheme.colorScheme.onSurface) {
-    Text(
-        text,
-        style = MaterialTheme.typography.labelLarge,
-        color = content,
-        modifier = Modifier.clip(CircleShape).background(container).padding(horizontal = 12.dp, vertical = 6.dp),
-    )
+fun Pill(
+    text: String,
+    icon: ImageVector? = null,
+    container: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
+    content: Color = MaterialTheme.colorScheme.onSurface,
+) {
+    Row(
+        Modifier.clip(CircleShape).background(container).padding(horizontal = 12.dp, vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        if (icon != null) Icon(icon, contentDescription = null, tint = content, modifier = Modifier.size(16.dp))
+        Text(text, style = MaterialTheme.typography.labelLarge, color = content)
+    }
 }
 
-/** Emoji, a big number and what it means. Sits in a row of two or three. */
+/** An icon on a soft rounded square, used at the start of card titles and list rows. */
 @Composable
-fun StatTile(emoji: String, value: String, label: String, modifier: Modifier = Modifier, container: Color = MaterialTheme.colorScheme.surfaceContainer) {
+fun IconBadge(
+    icon: ImageVector,
+    container: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
+    tint: Color = MaterialTheme.colorScheme.onSurface,
+    size: Dp = 36.dp,
+) {
+    Box(Modifier.size(size).clip(RoundedCornerShape(size / 3)).background(container), contentAlignment = Alignment.Center) {
+        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(size * 0.56f))
+    }
+}
+
+/** Card heading: an icon badge and a title. */
+@Composable
+fun CardTitle(text: String, icon: ImageVector? = null, color: Color = MaterialTheme.colorScheme.onSurface) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        if (icon != null) IconBadge(icon, tint = color)
+        Text(text, style = MaterialTheme.typography.titleLarge, color = color)
+    }
+}
+
+/** One explained point: a small icon, then a sentence. */
+@Composable
+fun Bullet(icon: ImageVector, text: String) {
+    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp).size(20.dp))
+        Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/** The app's own icons, drawn to match Material's. */
+object Ic {
+    val Lotus: ImageVector @Composable get() = ImageVector.vectorResource(R.drawable.ic_lotus)
+    val Timer: ImageVector @Composable get() = ImageVector.vectorResource(R.drawable.ic_timer)
+    val Eye: ImageVector @Composable get() = ImageVector.vectorResource(R.drawable.ic_eye)
+    val Shield: ImageVector @Composable get() = ImageVector.vectorResource(R.drawable.ic_shield)
+    val Flame: ImageVector @Composable get() = ImageVector.vectorResource(R.drawable.ic_flame)
+    val Fitness: ImageVector @Composable get() = ImageVector.vectorResource(R.drawable.ic_fitness)
+    val Chart: ImageVector @Composable get() = ImageVector.vectorResource(R.drawable.ic_chart)
+    val Hourglass: ImageVector @Composable get() = ImageVector.vectorResource(R.drawable.ic_hourglass)
+    val Moon: ImageVector @Composable get() = ImageVector.vectorResource(R.drawable.ic_moon)
+    val Phone: ImageVector @Composable get() = ImageVector.vectorResource(R.drawable.ic_phone)
+    val Quote: ImageVector @Composable get() = ImageVector.vectorResource(R.drawable.ic_quote)
+    val Lock: ImageVector @Composable get() = ImageVector.vectorResource(R.drawable.ic_lock)
+    val Edit: ImageVector @Composable get() = ImageVector.vectorResource(R.drawable.ic_edit)
+}
+
+/** An icon, a big number and what it means. Sits in a row of two or three. */
+@Composable
+fun StatTile(icon: ImageVector, value: String, label: String, modifier: Modifier = Modifier, container: Color = MaterialTheme.colorScheme.surfaceContainer) {
     Card(modifier, shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = container)) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(emoji, style = MaterialTheme.typography.titleLarge)
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(22.dp))
             Text(value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
             Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
@@ -267,7 +330,7 @@ fun Muted(text: String, modifier: Modifier = Modifier) {
     Text(text, modifier = modifier, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
-/** Small uppercase-free section label above a group of cards. */
+/** Small section label above a group of cards. */
 @Composable
 fun SectionLabel(text: String) {
     Text(text, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp, start = 4.dp))

@@ -90,6 +90,64 @@ class DetectionRulesTest {
         assertTrue(engine.evaluate(s)!!.isShortForm)
     }
 
+    /** Reported from a real phone: reels opened from Explore kept scrolling. The bottom bar stays visible there. */
+    @Test fun `instagram reel opened from explore`() {
+        val s = UiSnapshot(
+            DetectionRules.INSTAGRAM, w, h,
+            listOf(
+                tab("Home", false, 0), tab("Search and explore", true, 1), tab("Reels", false, 2),
+                n(id = "clips_item_container", cls = "android.widget.FrameLayout", r = w, b = 2260),
+                n(cls = "androidx.recyclerview.widget.RecyclerView", scrollable = true, t = 0, r = w, b = 2260),
+            ) + rightButtons("Like", "Comment", "Share").toList(),
+        )
+        assertTrue(engine.evaluate(s)!!.isShortForm)
+
+        // Same viewer, none of the view IDs we know.
+        val noIds = UiSnapshot(
+            DetectionRules.INSTAGRAM, w, h,
+            listOf(
+                tab("Home", false, 0), tab("Search and explore", true, 1),
+                n(cls = "androidx.recyclerview.widget.RecyclerView", scrollable = true, t = 0, r = w, b = 2260),
+            ) + rightButtons("Like", "Comment", "Share").toList(),
+        )
+        assertTrue(engine.evaluate(noIds)!!.isShortForm)
+    }
+
+    @Test fun `instagram posts scrolled from explore are caught, the explore grid is not`() {
+        val list = n(cls = "androidx.recyclerview.widget.RecyclerView", scrollable = true, t = 180, r = w, b = 2260)
+        val row = listOf("Like", "Comment", "Share").mapIndexed { i, l -> n(desc = l, l = 20 + i * 110, t = 1500, r = 120 + i * 110, b = 1600) }
+        val posts = UiSnapshot(DetectionRules.INSTAGRAM, w, h, listOf(tab("Home", false, 0), tab("Search and explore", true, 1), list) + row)
+        assertTrue(engine.evaluate(posts)!!.isShortForm)
+
+        val tiles = (0 until 3).map { col -> n(desc = "Photo by someone. 30 likes, 2 comments", l = col * 360, t = 400, r = col * 360 + 358, b = 760) }
+        val grid = UiSnapshot(DetectionRules.INSTAGRAM, w, h, listOf(tab("Home", false, 0), tab("Search and explore", true, 1), list) + tiles)
+        assertFalse(engine.evaluate(grid)!!.isShortForm)
+
+        val home = UiSnapshot(DetectionRules.INSTAGRAM, w, h, listOf(tab("Home", true, 0), tab("Search and explore", false, 1), list) + row)
+        assertFalse(engine.evaluate(home)!!.isShortForm)
+    }
+
+    @Test fun `a chat with a shared reel stays open, opening the reel does not`() {
+        val chat = UiSnapshot(
+            DetectionRules.INSTAGRAM, w, h,
+            listOf(
+                n(cls = "androidx.recyclerview.widget.RecyclerView", scrollable = true, t = 200, r = w, b = 2200),
+                n(id = "clips_share_preview", desc = "Reel by someone", l = 300, t = 900, r = 900, b = 1500),
+                // The composer's buttons sit side by side at the bottom right.
+                n(desc = "Send", l = 940, t = 2250, r = 1040, b = 2350), n(desc = "Like", l = 830, t = 2250, r = 930, b = 2350),
+                n(text = "Original audio", t = 1450, b = 1490),
+            ),
+        )
+        assertFalse(engine.evaluate(chat)!!.isShortForm)
+
+        val opened = UiSnapshot(
+            DetectionRules.INSTAGRAM, w, h,
+            listOf(n(id = "clips_viewer_pager_v2", cls = "androidx.recyclerview.widget.RecyclerView", scrollable = true, r = w, b = h)) +
+                rightButtons("Like", "Comment", "Send").toList(),
+        )
+        assertTrue(engine.evaluate(opened)!!.isShortForm)
+    }
+
     @Test fun `youtube shorts tab`() {
         val s = UiSnapshot(
             DetectionRules.YOUTUBE, w, h,

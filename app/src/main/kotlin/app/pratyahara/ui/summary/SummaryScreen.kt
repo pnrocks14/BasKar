@@ -13,6 +13,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.pratyahara.core.tasks.CheckIn
 import app.pratyahara.detection.DetectionRules
 import app.pratyahara.engine
+import app.pratyahara.ui.components.CardTitle
+import app.pratyahara.ui.components.Ic
 import app.pratyahara.ui.components.Muted
 import app.pratyahara.ui.components.Screen
 import app.pratyahara.ui.components.SoftCard
@@ -28,44 +30,44 @@ fun SummaryScreen(onBack: () -> Unit) {
     val task = engine.todaysTask(data)
     val streaks = engine.streaks(data)
 
-    Screen("today's recap 📊", onBack) {
+    Screen("Today's recap", onBack) {
         SoftCard {
-            Text("minutes on reels + shorts", style = MaterialTheme.typography.titleLarge)
-            if (usage.secondsByApp.isEmpty()) Muted("zero. iconic 👑")
+            CardTitle("Minutes on Reels and Shorts", Ic.Chart)
+            if (usage.secondsByApp.isEmpty()) Muted("Zero. Nicely done.")
             usage.secondsByApp.entries.sortedByDescending { it.value }.forEach { (pkg, secs) ->
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(DetectionRules.appName(pkg))
-                    Text(formatMinutes(secs))
+                    Text(DetectionRules.appName(pkg), style = MaterialTheme.typography.bodyLarge)
+                    Text(formatMinutes(secs), style = MaterialTheme.typography.bodyLarge)
                 }
             }
-            Muted("daily limit: ${data.budgetMinutes} min")
+            Muted("Daily limit: ${data.budgetMinutes} min")
         }
         SoftCard {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                Stat("${usage.visits}", "opens")
-                Stat("${usage.blocks}", "stops")
-                Stat("${usage.unlocks}", "unlocks")
-                Stat("${streaks.honest}", "honest")
-                Stat("${streaks.done}", "🔥 streak")
+                Stat("${usage.visits}", "Opens")
+                Stat("${usage.blocks}", "Pauses")
+                Stat("${usage.unlocks}", "Unlocks")
+                Stat("${streaks.honest}", "Honest")
+                Stat("${streaks.done}", "Streak")
             }
         }
         SoftCard {
-            Text("today's task ✍️", style = MaterialTheme.typography.titleLarge)
-            if (task == null) Muted("no task set for today.")
+            CardTitle("Today's task", Ic.Edit)
+            if (task == null) Muted("No task set for today.")
             else {
-                Text("“${task.text}”")
+                Text("“${task.text}”", style = MaterialTheme.typography.bodyLarge)
                 Muted(
                     when (task.checkIn) {
-                        CheckIn.DONE -> "done ✅"
-                        CheckIn.NOT_DONE -> "not done, and you were honest about it. respect 🫡"
-                        null -> "not answered yet. check in before 4 am."
+                        CheckIn.DONE -> "Done."
+                        CheckIn.NOT_DONE -> "Not done, and you were honest about it. That counts."
+                        null -> "Not answered yet. Check in before 4 am."
                     }
                 )
             }
         }
         SoftCard {
-            Text("this week you saved ${formatMinutes(engine.weekSavedMinutes(data) * 60L)} ⏳", style = MaterialTheme.typography.titleLarge)
-            Muted("vs the ${data.baselineMinutes} min a day you said you used to scroll.")
+            CardTitle("You saved ${formatMinutes(engine.weekSavedMinutes(data) * 60L)} this week", Ic.Hourglass)
+            Muted("Compared with the ${data.baselineMinutes} min a day you said you used to scroll.")
         }
     }
 }

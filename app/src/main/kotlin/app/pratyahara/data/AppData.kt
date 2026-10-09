@@ -3,6 +3,7 @@ package app.pratyahara.data
 import app.pratyahara.core.budget.ChangeType
 import app.pratyahara.core.budget.DelayTable
 import app.pratyahara.core.budget.PendingChange
+import app.pratyahara.core.lock.FocusHours
 import app.pratyahara.core.lock.UnlockRules
 import app.pratyahara.core.tasks.CheckIn
 import app.pratyahara.core.tasks.DayTask
@@ -43,10 +44,21 @@ data class AppData(
     val squatPlacement: String = "POCKET",
     /** Count squats out loud, so the screen doesn't need watching. */
     val voiceCount: Boolean = true,
+    /** Floating Pratyahara button, shown only inside the limited apps and Pratyahara itself. */
+    val bubbleEnabled: Boolean = true,
+    /** Seconds of breathing before Reels/Shorts opens; 0 skips the pause. */
+    val pauseSeconds: Int = 5,
+    /** Minutes of non-stop scrolling before the pause asks again; 0 means never. */
+    val checkEveryMinutes: Int = 10,
+    /** Daily hours when Reels/Shorts stay closed, as minutes since midnight. */
+    val focusEnabled: Boolean = false,
+    val focusStart: Int = 22 * 60 + 30,
+    val focusEnd: Int = 7 * 60,
 ) {
     fun day(day: LocalDate): DayUsage = days[day.toString()] ?: DayUsage()
     fun taskModels(): List<DayTask> = tasks.map { it.toModel() }
     fun pendingModels(): List<PendingChange> = pending.map { it.toModel() }
+    fun focusHours(): FocusHours? = if (focusEnabled) FocusHours(focusStart, focusEnd) else null
 }
 
 @Serializable

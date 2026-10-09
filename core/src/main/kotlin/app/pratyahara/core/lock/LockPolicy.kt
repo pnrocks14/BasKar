@@ -10,6 +10,9 @@ data class LockInputs(
     val taskGate: TaskGate,
     val cooldownUntilMillis: Long,
     val nowMillis: Long,
+    val focusHours: FocusHours? = null,
+    /** Local time as minutes since midnight, for [focusHours]. */
+    val minuteOfDay: Int = 0,
 )
 
 object UnlockRules {
@@ -26,6 +29,7 @@ object LockPolicy {
 
     fun evaluate(i: LockInputs): LockState {
         if (!i.blockingEnabled) return LockState.Disabled
+        if (i.focusHours?.isActive(i.minuteOfDay) == true) return LockState.FocusLocked(i.focusHours.endMinute)
         if (i.taskGate != TaskGate.OPEN) return LockState.TaskLocked(i.taskGate)
         if (i.nowMillis < i.cooldownUntilMillis) return LockState.Cooldown(i.cooldownUntilMillis)
 

@@ -53,6 +53,8 @@ class Engine(val store: Store, val clock: Clock) {
                 taskGate = TaskLoop.gate(today, tasks),
                 cooldownUntilMillis = d.cooldownUntil,
                 nowMillis = clock.nowMillis(),
+                focusHours = d.focusHours(),
+                minuteOfDay = minuteOfDay(),
             )
         )
         // After a missed check-in, squats can't buy time today.
@@ -61,6 +63,12 @@ class Engine(val store: Store, val clock: Clock) {
         }
         return state
     }
+
+    fun minuteOfDay(): Int =
+        java.time.Instant.ofEpochMilli(clock.nowMillis()).atZone(zone).toLocalTime().let { it.hour * 60 + it.minute }
+
+    /** Focus hours can't be loosened while they're on, or they'd be one tap away from useless. */
+    fun focusEditable(d: AppData = store.current): Boolean = d.focusHours()?.isActive(minuteOfDay()) != true
 
     fun taskGate(d: AppData = store.current): TaskGate = TaskLoop.gate(today(), d.taskModels())
     fun streaks(d: AppData = store.current): StreakSummary = Streaks.compute(d.taskModels(), today())
@@ -106,6 +114,13 @@ class Engine(val store: Store, val clock: Clock) {
             d.copy(days = d.days + (key to day.copy(visits = visits)))
         }
         return visits
+    }
+
+    /** Returns false while focus hours are running. */
+    suspend fun setFocus(enabled: Boolean, start: Int, end: Int): Boolean {
+        if (!focusEditable()) return false
+        store.update { it.copy(focusEnabled = enabled, focusStart = start, focusEnd = end) }
+        return true
     }
 
     suspend fun updateSettings(transform: (AppData) -> AppData) = store.update(transform)

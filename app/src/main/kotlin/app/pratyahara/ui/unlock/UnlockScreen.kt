@@ -42,6 +42,12 @@ import app.pratyahara.sensors.RepProgress
 import app.pratyahara.sensors.SquatSensorSource
 import app.pratyahara.ui.components.AccentButton
 import app.pratyahara.ui.components.Meter
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material3.Icon
+import androidx.compose.ui.graphics.vector.ImageVector
+import app.pratyahara.ui.components.Ic
 import app.pratyahara.ui.components.Muted
 import app.pratyahara.ui.components.Screen
 import app.pratyahara.ui.components.SecondaryButton
@@ -82,10 +88,10 @@ fun UnlockScreen(onBack: () -> Unit, onUnlocked: () -> Unit) {
             val from = if (placement == PhonePlacement.POCKET) 5 else 3
             for (i in from downTo 1) {
                 countdown = i
-                feedback.say(if (i == from && placement == PhonePlacement.POCKET) "pocket it and stand tall. $i" else "$i")
+                feedback.say(if (i == from && placement == PhonePlacement.POCKET) "Pocket it and stand tall. $i" else "$i")
                 delay(1_000)
             }
-            feedback.say("go")
+            feedback.say("Go")
             phase = Phase.COUNTING
         }
     }
@@ -116,14 +122,15 @@ fun UnlockScreen(onBack: () -> Unit, onUnlocked: () -> Unit) {
         }
     }
 
-    Screen("earn ${UnlockRules.UNLOCK_MINUTES} min 🏋️", onBack, subtitle = "$target squats and reels are back for ${UnlockRules.UNLOCK_MINUTES} min. your phone counts them.") {
+    Screen("Earn ${UnlockRules.UNLOCK_MINUTES} minutes", onBack, subtitle = "Do $target squats and Reels are back for ${UnlockRules.UNLOCK_MINUTES} minutes. Your phone counts them.") {
         if (!LockPolicy.canEarnUnlock(state) && !granted) {
             SoftCard {
                 Text(
                     when (state) {
-                        is LockState.BudgetLocked -> "you've used today's unlocks. fresh start tomorrow 🌅"
-                        is LockState.TaskLocked -> "squats can't open this one. writing your task will ✍️"
-                        else -> "you still have time left today, nothing to unlock rn 👍"
+                        is LockState.BudgetLocked -> "You've used today's unlocks. Fresh start tomorrow."
+                        is LockState.TaskLocked -> "Squats can't open this one, but writing your task will."
+                        is LockState.FocusLocked -> "Focus hours are on. Squats can't open Reels until they end."
+                        else -> "You still have time left today, so there's nothing to unlock."
                     },
                     style = MaterialTheme.typography.titleLarge,
                 )
@@ -131,42 +138,42 @@ fun UnlockScreen(onBack: () -> Unit, onUnlocked: () -> Unit) {
             return@Screen
         }
         if (!source.available) {
-            SoftCard { Text("this phone has no motion sensor, so squats can't be counted 😕", style = MaterialTheme.typography.titleLarge) }
+            SoftCard { Text("This phone has no motion sensor, so squats can't be counted.", style = MaterialTheme.typography.titleLarge) }
             return@Screen
         }
 
         when (phase) {
             Phase.SETUP -> {
-                Text("where's your phone going?", style = MaterialTheme.typography.titleLarge)
+                Text("Where will your phone be?", style = MaterialTheme.typography.titleLarge)
                 PlacementOption(
                     selected = placement == PhonePlacement.POCKET,
-                    emoji = "👖",
-                    title = "in my pocket (best)",
-                    body = "front trouser pocket, any way up. your thigh tilts on every squat, which is super easy to count. no need to look at the screen.",
+                    icon = Icons.Rounded.Person,
+                    title = "In my pocket (best)",
+                    body = "Front trouser pocket, any way up. Your thigh tilts on every squat, which is easy to count. No need to look at the screen.",
                 ) { scope.launch { engine.updateSettings { it.copy(squatPlacement = PhonePlacement.POCKET.name) } } }
                 PlacementOption(
                     selected = placement == PhonePlacement.CHEST,
-                    emoji = "🤲",
-                    title = "holding it at my chest",
-                    body = "both hands, screen facing you, elbows tucked in. keep the phone still in your hands and let your legs do the moving.",
+                    icon = Ic.Phone,
+                    title = "Holding it at my chest",
+                    body = "Both hands, screen facing you, elbows tucked in. Keep the phone still in your hands and let your legs do the moving.",
                 ) { scope.launch { engine.updateSettings { it.copy(squatPlacement = PhonePlacement.CHEST.name) } } }
                 SoftCard {
-                    Text("how to squat so it counts", style = MaterialTheme.typography.titleMedium)
-                    Muted("1. feet shoulder-width, stand tall for a sec\n2. sit back and down until your thighs are about level\n3. stand all the way up\n4. about 2 seconds a rep. slow > fast")
+                    Text("How to squat so it counts", style = MaterialTheme.typography.titleMedium)
+                    Muted("1. Feet shoulder-width apart, stand tall for a second\n2. Sit back and down until your thighs are about level\n3. Stand all the way up\n4. About 2 seconds a rep. Slow beats fast")
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
-                            Text("count out loud 🔊", style = MaterialTheme.typography.titleMedium)
-                            Muted("hear every rep, plus a buzz")
+                            Text("Count out loud", style = MaterialTheme.typography.titleMedium)
+                            Muted("Hear every rep, plus a buzz")
                         }
                         Switch(checked = data.voiceCount, onCheckedChange = { on -> scope.launch { engine.updateSettings { it.copy(voiceCount = on) } } })
                     }
                 }
-                AccentButton("i'm ready", { phase = Phase.COUNTDOWN })
+                AccentButton("I'm ready", { phase = Phase.COUNTDOWN })
             }
             Phase.COUNTDOWN -> {
                 Text("$countdown", style = MaterialTheme.typography.displayLarge, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
                 Text(
-                    if (placement == PhonePlacement.POCKET) "pocket it and stand tall 👖" else "hold it at your chest and stand tall 🤲",
+                    if (placement == PhonePlacement.POCKET) "Pocket it and stand tall" else "Hold it at your chest and stand tall",
                     style = MaterialTheme.typography.titleLarge,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth(),
@@ -181,25 +188,25 @@ fun UnlockScreen(onBack: () -> Unit, onUnlocked: () -> Unit) {
                 )
                 Text("of $target", style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
                 SoftCard {
-                    Text("depth", style = MaterialTheme.typography.titleMedium)
+                    Text("Depth", style = MaterialTheme.typography.titleMedium)
                     Meter(progress.depth)
-                    Muted(if (progress.depth >= 0.99f) "that's deep enough, now stand up ⬆️" else "go down until this fills up ⬇️")
+                    Muted(if (progress.depth >= 0.99f) "That's deep enough. Now stand up." else "Go down until this fills up.")
                 }
                 if (progress.shaking) {
                     SoftCard(container = MaterialTheme.colorScheme.tertiaryContainer) {
-                        Text("that looks like shaking 🫨 only steady squats count.", color = MaterialTheme.colorScheme.onTertiaryContainer)
+                        Text("That looks like shaking. Only steady squats count.", color = MaterialTheme.colorScheme.onTertiaryContainer)
                     }
                 }
                 if (progress.reps == 0 && secondsWithoutReps >= 12) {
                     SoftCard(container = MaterialTheme.colorScheme.secondaryContainer) {
-                        Text("not counting? 🤔", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                        Text("Not counting?", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSecondaryContainer)
                         Text(
-                            if (placement == PhonePlacement.POCKET) "make sure it's in a front pocket that sits on your thigh, not a jacket or back pocket. go a bit lower: the depth bar has to fill up."
-                            else "keep the phone tight to your chest and squat slower and deeper. pocket mode is way more reliable if you can use it.",
+                            if (placement == PhonePlacement.POCKET) "Make sure it's in a front pocket that sits on your thigh, not a jacket or back pocket. Go a bit lower: the depth bar has to fill up."
+                            else "Keep the phone tight to your chest and squat slower and deeper. Pocket mode is much more reliable if you can use it.",
                             color = MaterialTheme.colorScheme.onSecondaryContainer,
                         )
                         val other = if (placement == PhonePlacement.POCKET) PhonePlacement.CHEST else PhonePlacement.POCKET
-                        SecondaryButton(if (other == PhonePlacement.POCKET) "switch to pocket mode 👖" else "switch to chest mode 🤲", {
+                        SecondaryButton(if (other == PhonePlacement.POCKET) "Switch to pocket mode" else "Switch to chest mode", {
                             scope.launch { engine.updateSettings { it.copy(squatPlacement = other.name) } }
                             phase = Phase.COUNTDOWN
                         })
@@ -211,7 +218,7 @@ fun UnlockScreen(onBack: () -> Unit, onUnlocked: () -> Unit) {
 }
 
 @Composable
-private fun PlacementOption(selected: Boolean, emoji: String, title: String, body: String, onSelect: () -> Unit) {
+private fun PlacementOption(selected: Boolean, icon: ImageVector, title: String, body: String, onSelect: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth().selectable(selected = selected, role = Role.RadioButton, onClick = onSelect),
         shape = RoundedCornerShape(24.dp),
@@ -222,7 +229,7 @@ private fun PlacementOption(selected: Boolean, emoji: String, title: String, bod
         border = if (selected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Row(Modifier.padding(18.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            Text(emoji, style = MaterialTheme.typography.headlineMedium)
+            Icon(icon, contentDescription = null, modifier = Modifier.size(28.dp))
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(title, style = MaterialTheme.typography.titleMedium)
                 Text(body, style = MaterialTheme.typography.bodyMedium)

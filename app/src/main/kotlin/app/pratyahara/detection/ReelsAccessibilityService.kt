@@ -12,10 +12,16 @@ import app.pratyahara.core.buddy.Chip
 import app.pratyahara.core.detection.Debouncer
 import app.pratyahara.core.detection.DetectionEngine
 import app.pratyahara.core.detection.DetectionResult
+import app.pratyahara.core.lock.FocusHours
 import app.pratyahara.core.lock.LockState
+import app.pratyahara.core.lock.MindfulGate
+import app.pratyahara.data.AppData
 import app.pratyahara.engine
 import app.pratyahara.overlay.BlockOverlay
 import app.pratyahara.overlay.BuddyChip
+import app.pratyahara.overlay.FloatingBubble
+import app.pratyahara.overlay.PauseContent
+import app.pratyahara.overlay.PauseOverlay
 import app.pratyahara.overlay.OverlayCopy
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
@@ -29,9 +35,10 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 /**
- * Watches only the apps the user chose. When their Reels/Shorts screen is visible it counts the time,
- * checks in now and then with a small chip at the top, and when the lock policy says so it shows the
- * pause screen. Screen content is scored in memory and dropped.
+ * Watches only the apps the user chose. When their Reels/Shorts screen opens it offers a breathing pause,
+ * counts the time, checks in now and then with a small chip at the top, and when the lock policy says so
+ * it shows the pause screen. A floating button appears only while a limited app is on screen.
+ * Screen content is scored in memory and dropped.
  */
 class ReelsAccessibilityService : AccessibilityService() {
 
@@ -40,8 +47,12 @@ class ReelsAccessibilityService : AccessibilityService() {
     private val debouncer = Debouncer(required = 2)
     private lateinit var overlay: BlockOverlay
     private lateinit var chip: BuddyChip
+    private lateinit var pause: PauseOverlay
+    private lateinit var bubble: FloatingBubble
     private var buddy = Buddy()
     private var buddyEvery = -1
+    private var gate = MindfulGate()
+    private var gateSettings: Pair<Int, Int>? = null
 
     /** Package whose Reels/Shorts screen is visible right now, or null. */
     private var visiblePackage: String? = null
@@ -56,6 +67,8 @@ class ReelsAccessibilityService : AccessibilityService() {
         running.value = true
         overlay = BlockOverlay(this, onBack = ::goBack, onOpenRoute = ::openApp)
         chip = BuddyChip(this)
+        pause = PauseOverlay(this, onContinue = ::pauseContinue, onLeave = ::goBack)
+        bubble = FloatingBubble(this, onTap = ::showStatusChip)
         // The accessibility shortcut (floating button or gesture) shows how today is going.
         accessibilityButtonController.registerAccessibilityButtonCallback(object : AccessibilityButtonController.AccessibilityButtonCallback() {
             override fun onClicked(controller: AccessibilityButtonController) = showStatusChip()
@@ -83,6 +96,7 @@ class ReelsAccessibilityService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         val pkg = event?.packageName?.toString() ?: return
         if (pkg !in engine.store.current.monitored) return
+        updateBubble(pkg)
         val now = System.currentTimeMillis()
         if (now - lastEvalAt >= THROTTLE_MS) {
             evaluate()
@@ -105,6 +119,7 @@ class ReelsAccessibilityService : AccessibilityService() {
         }
         val metrics = resources.displayMetrics
         val snapshot = SnapshotMapper.map(root, metrics.widthPixels, metrics.heightPixels)
+        if (recordLayout.value) lastLayout.value = SnapshotMapper.describe(snapshot)
         val result = detector.evaluate(snapshot) ?: return
         lastResult.value = result
         val on = debouncer.update(result.isShortForm)
@@ -125,7 +140,11 @@ class ReelsAccessibilityService : AccessibilityService() {
         refreshOverlay()
         val now = System.currentTimeMillis()
         if (pkg != null && previous == null) onReelsOpened(now)
-        if (pkg == null && previous != null) buddy.onLeave(now)
+        if (pkg == null && previous != null) {
+            buddy.onLeave(now)
+            gate.onLeave(now)
+            pause.hide()
+        }
     }
 
     private fun onReelsOpened(now: Long) {
@@ -133,10 +152,87 @@ class ReelsAccessibilityService : AccessibilityService() {
             val visits = engine.recordVisit()
             val data = engine.store.current
             val state = engine.lockState(data)
-            if (!data.buddyEnabled || state !is LockState.Allowed || overlay.isShowing) return@launch
-            syncBuddy(data.quoteEveryMinutes)
-            buddy.onEnter(now, visits, (state.remainingSeconds + 59) / 60)?.let { chip.show(it) }
+            if (state !is LockState.Allowed || overlay.isShowing || visiblePackage == null) return@launch
+            syncGate(data)
+            // Right after a squat unlock the cooldown already was the pause.
+            val justUnlocked = now - data.cooldownUntil in 0 until 120_000
+            if (gate.onEnter(now) && !justUnlocked) {
+                val left = (state.remainingSeconds + 59) / 60
+                val section = sectionName()
+                chip.hide()
+                pause.show(
+                    PauseContent(
+                        title = "Take a breath",
+                        body = (if (visits <= 1) "First time opening $section today." else "This is visit $visits to $section today.") +
+                            " You have ${minutes(left)} left.",
+                        continueLabel = "Open $section",
+                        seconds = data.pauseSeconds,
+                    )
+                )
+                visitsAtPause = visits
+            } else {
+                if (!gate.isOpen) gate.onOpened(now)
+                greet(now, visits, state)
+            }
         }
+    }
+
+    private var visitsAtPause = 0
+
+    /** The user chose to watch after the pause. */
+    private fun pauseContinue() {
+        val now = System.currentTimeMillis()
+        pause.hide()
+        gate.onOpened(now)
+        (engine.lockState() as? LockState.Allowed)?.let { greet(now, visitsAtPause, it) }
+    }
+
+    private fun greet(now: Long, visits: Int, state: LockState.Allowed) {
+        val data = engine.store.current
+        if (!data.buddyEnabled || overlay.isShowing || pause.isShowing) return
+        syncBuddy(data.quoteEveryMinutes)
+        buddy.onEnter(now, visits, (state.remainingSeconds + 59) / 60)?.let { chip.show(it) }
+    }
+
+    /** Asks again after a long stretch of scrolling. */
+    private fun checkInIfDue(now: Long) {
+        if (!gate.isCheckDue(now) || pause.isShowing || overlay.isShowing) return
+        val data = engine.store.current
+        val state = engine.lockState(data) as? LockState.Allowed ?: return
+        val section = sectionName()
+        chip.hide()
+        pause.show(
+            PauseContent(
+                title = "${gate.minutesSinceOpened(now)} minutes of $section",
+                body = "Still watching on purpose? You have ${minutes((state.remainingSeconds + 59) / 60)} left today.",
+                continueLabel = "Keep watching",
+                seconds = data.pauseSeconds.coerceAtLeast(3),
+            )
+        )
+        visitsAtPause = data.day(engine.today()).visits
+        // Counts from now, whatever the user picks.
+        gate.onOpened(now)
+    }
+
+    private fun sectionName(): String = visiblePackage?.let { detector.ruleFor(it)?.sectionName } ?: "Reels"
+
+    private fun minutes(n: Long) = if (n == 1L) "1 minute" else "$n minutes"
+
+    /** Rebuilds the pause logic when its settings change. */
+    private fun syncGate(data: AppData) {
+        val settings = data.pauseSeconds to data.checkEveryMinutes
+        if (settings == gateSettings) return
+        gateSettings = settings
+        gate = MindfulGate(pauseSeconds = data.pauseSeconds, checkEveryMinutes = data.checkEveryMinutes)
+    }
+
+    /** The floating button shows only inside a limited app or Pratyahara itself, and never over a pause screen. */
+    private fun updateBubble(foreground: String?) {
+        val d = engine.store.current
+        val inScope = foreground != null && (foreground in d.monitored || foreground == packageName)
+        val want = d.bubbleEnabled && d.onboarded && inScope && !overlay.isShowing && !pause.isShowing &&
+            getSystemService(PowerManager::class.java).isInteractive
+        if (want) bubble.show() else bubble.hide()
     }
 
     /** Rebuilds the buddy when the quote interval changes in Settings. */
@@ -153,21 +249,22 @@ class ReelsAccessibilityService : AccessibilityService() {
         val state = engine.lockState(data) as? LockState.Allowed ?: return
         syncBuddy(data.quoteEveryMinutes)
         val left = state.remainingSeconds - (unflushedSeconds[pkg] ?: 0L)
-        buddy.onSecond(engine.today().toString(), left)?.let { if (!overlay.isShowing) chip.show(it) }
+        buddy.onSecond(engine.today().toString(), left)?.let { if (!overlay.isShowing && !pause.isShowing) chip.show(it) }
     }
 
     private fun showStatusChip() {
         val data = engine.store.current
         val usage = data.day(engine.today())
         val line = when (val state = engine.lockState(data)) {
-            is LockState.Allowed -> "${(state.remainingSeconds + 59) / 60} min of reels left today"
-            is LockState.BudgetLocked -> "reels are done for today 🔒"
-            is LockState.TaskLocked -> "reels are waiting on your task ✍️"
-            is LockState.Cooldown -> "reels open in a few seconds"
-            LockState.Disabled -> "blocking is off rn"
+            is LockState.Allowed -> "${minutes((state.remainingSeconds + 59) / 60)} of Reels left today"
+            is LockState.BudgetLocked -> "Reels are done for today"
+            is LockState.TaskLocked -> "Reels are waiting on your task"
+            is LockState.Cooldown -> "Reels open in a few seconds"
+            is LockState.FocusLocked -> "Focus hours until ${FocusHours.format(state.endMinute)}"
+            LockState.Disabled -> "Blocking is off"
         }
         chip.show(
-            Chip(Chip.Kind.HELLO, "hii 👋 i'm on it", "$line · ${usage.blocks} stops today · tap to open"),
+            Chip(Chip.Kind.HELLO, line, "Opened ${usage.visits} times · paused ${usage.blocks} times · tap for more"),
             durationMs = 5_000,
             onTap = { openApp("home") },
         )
@@ -178,6 +275,7 @@ class ReelsAccessibilityService : AccessibilityService() {
         val now = System.currentTimeMillis()
         if (pkg == null || now < suppressOverlayUntil) {
             overlay.hide()
+            if (pkg == null) pause.hide()
             return
         }
         val data = engine.store.current
@@ -190,6 +288,8 @@ class ReelsAccessibilityService : AccessibilityService() {
         val content = OverlayCopy.forState(state, data.budgetMinutes, rule?.sectionName ?: "Reels", data.squats, now) ?: return
         if (!overlay.isShowing) scope.launch { engine.recordBlock() }
         chip.hide()
+        pause.hide()
+        bubble.hide()
         overlay.show(content)
     }
 
@@ -197,6 +297,7 @@ class ReelsAccessibilityService : AccessibilityService() {
     private fun goBack() {
         suppressOverlayUntil = System.currentTimeMillis() + BACK_SUPPRESS_MS
         overlay.hide()
+        pause.hide()
         performGlobalAction(GLOBAL_ACTION_BACK)
         scope.launch {
             delay(BACK_SUPPRESS_MS + 50)
@@ -216,15 +317,17 @@ class ReelsAccessibilityService : AccessibilityService() {
             delay(1_000)
             ticks++
             val pkg = visiblePackage
+            val foreground = rootInActiveWindow?.packageName?.toString()
             if (pkg != null) {
-                val stillThere = rootInActiveWindow?.packageName?.toString() == pkg
-                if (!stillThere || !power.isInteractive) {
+                if (foreground != pkg || !power.isInteractive) {
                     setVisible(null)
-                } else if (!overlay.isShowing) {
+                } else if (!overlay.isShowing && !pause.isShowing) {
                     unflushedSeconds[pkg] = (unflushedSeconds[pkg] ?: 0L) + 1
                     buddySecond(pkg)
+                    checkInIfDue(System.currentTimeMillis())
                 }
             }
+            updateBubble(foreground)
             refreshOverlay()
             if (ticks % FLUSH_EVERY_S == 0 || (pkg == null && unflushedSeconds.isNotEmpty())) flush()
             if (ticks % 60 == 0) engine.applyDuePending()
@@ -244,6 +347,8 @@ class ReelsAccessibilityService : AccessibilityService() {
         running.value = false
         if (::overlay.isInitialized) overlay.hide()
         if (::chip.isInitialized) chip.hide()
+        if (::pause.isInitialized) pause.hide()
+        if (::bubble.isInitialized) bubble.hide()
         val batch = HashMap(unflushedSeconds)
         // Best effort: the process may be going away.
         (applicationContext as app.pratyahara.PratyaharaApp).appScope.launch { engine.addUsage(batch) }
@@ -259,6 +364,10 @@ class ReelsAccessibilityService : AccessibilityService() {
         /** For the in-app debug screen only: the latest score and which signals matched. No screen content. */
         val lastResult = MutableStateFlow<DetectionResult?>(null)
         val running = MutableStateFlow(false)
+
+        /** Detection check: keep a redacted description of the latest screen, see [SnapshotMapper.describe]. */
+        val recordLayout = MutableStateFlow(false)
+        val lastLayout = MutableStateFlow<String?>(null)
         val isRunning: StateFlow<Boolean> get() = running
     }
 }

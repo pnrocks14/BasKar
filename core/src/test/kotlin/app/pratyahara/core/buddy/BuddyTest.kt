@@ -37,8 +37,8 @@ class BuddyTest {
         b.onEnter(0, 1, 6)
         val chips = (360 downTo 1).mapNotNull { b.onSecond("d1", it.toLong()) }
         assertEquals(2, chips.size)
-        assertTrue(chips[0].title.startsWith("5 min left"))
-        assertTrue(chips[1].title.startsWith("last minute"))
+        assertTrue(chips[0].title.startsWith("5 minutes left"))
+        assertTrue(chips[1].title.startsWith("Last minute"))
         assertNull(b.onSecond("d1", 30))
         assertNotNull(b.onSecond("d2", 30))
     }

@@ -14,12 +14,16 @@ sealed interface Signal {
         }
     }
 
-    /** A scrollable container covering most of the screen: the vertical full-screen pager. */
-    data class FullScreenPager(val coverage: Double = 0.85) : Signal {
+    /**
+     * A scrollable pager or list filling the screen from near the top: the vertical full-screen player.
+     * Height coverage is loose because the bottom navigation often stays visible (Reels opened from Explore).
+     */
+    data class FullScreenPager(val widthCoverage: Double = 0.9, val heightCoverage: Double = 0.72) : Signal {
         override fun matches(s: UiSnapshot) = s.nodes.any { n ->
             n.scrollable &&
-                n.width >= s.screenWidth * coverage &&
-                n.height >= s.screenHeight * coverage &&
+                n.width >= s.screenWidth * widthCoverage &&
+                n.height >= s.screenHeight * heightCoverage &&
+                n.top <= s.screenHeight * 0.2 &&
                 (n.className.orEmpty().contains("Pager") || n.className.orEmpty().contains("RecyclerView"))
         }
     }
@@ -37,9 +41,29 @@ sealed interface Signal {
                     it.top > s.screenHeight * 0.25 &&
                     it.label.length <= 40
             }
-            val found = labels.count { l -> rightEdge.any { it.label.contains(l.lowercase()) } }
-            return found >= minMatches
+            val hits = labels.mapNotNull { l -> rightEdge.firstOrNull { it.label.contains(l.lowercase()) } }.distinct()
+            if (hits.size < minMatches) return false
+            // Stacked top to bottom, not side by side like a message composer's buttons.
+            return hits.maxOf { it.top } - hits.minOf { it.top } >= s.screenHeight * 0.04
         }
+    }
+
+    /**
+     * At least [minMatches] action labels on small buttons side by side in the left part of the screen:
+     * the like/comment/share row under a post.
+     */
+    data class ActionRow(val labels: Set<String>, val minMatches: Int = 2) : Signal {
+        override fun matches(s: UiSnapshot): Boolean {
+            val small = s.nodes.filter { it.centerX < s.screenWidth * 0.6 && it.width in 1..(s.screenWidth * 0.2).toInt() && it.label.length <= 40 }
+            val hits = labels.mapNotNull { l -> small.firstOrNull { it.label.contains(l.lowercase()) } }.distinct()
+            if (hits.size < minMatches) return false
+            return hits.maxOf { it.top } - hits.minOf { it.top } <= s.screenHeight * 0.03
+        }
+    }
+
+    /** Every one of [signals] matches. For clues that only mean something together. */
+    data class AllOf(val signals: List<Signal>) : Signal {
+        override fun matches(s: UiSnapshot) = signals.all { it.matches(s) }
     }
 
     /** Any node whose text or description contains one of [labels], e.g. "Original audio". */
@@ -50,6 +74,17 @@ sealed interface Signal {
     /** Every one of [labels] is on screen at once, e.g. "posts", "followers", "following" on a profile. */
     data class AllLabelsPresent(val labels: Set<String>) : Signal {
         override fun matches(s: UiSnapshot) = labels.all { l -> s.nodes.any { it.label.contains(l.lowercase()) } }
+    }
+
+    /**
+     * A view ID containing one of [fragments] (Instagram calls Reels "clips" internally), except [exclude],
+     * on a view at least [minHeight] of the screen tall: the player itself, not a small preview of it.
+     */
+    data class ViewIdContains(val fragments: Set<String>, val exclude: Set<String> = emptySet(), val minHeight: Double = 0.0) : Signal {
+        override fun matches(s: UiSnapshot) = s.nodes.any { n ->
+            val id = n.viewId ?: return@any false
+            id !in exclude && n.height >= s.screenHeight * minHeight && fragments.any { id.contains(it) }
+        }
     }
 
     /** A view ID known to belong to the player. A soft clue: apps rename these. */

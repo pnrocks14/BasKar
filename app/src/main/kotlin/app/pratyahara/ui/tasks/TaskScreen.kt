@@ -19,6 +19,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.pratyahara.core.tasks.CheckIn
 import app.pratyahara.core.validation.ValidationResult
 import app.pratyahara.engine
+import app.pratyahara.ui.components.CardTitle
+import app.pratyahara.ui.components.Ic
 import app.pratyahara.ui.components.Muted
 import app.pratyahara.ui.components.PrimaryButton
 import app.pratyahara.ui.components.Screen
@@ -36,16 +38,16 @@ fun TaskScreen(onBack: () -> Unit, onDone: () -> Unit) {
     var message by remember { mutableStateOf<String?>(null) }
     var justAnswered by remember { mutableStateOf<CheckIn?>(null) }
 
-    Screen(if (awaiting != null) "check-in 👀" else "your next task ✍️", onBack) {
+    Screen(if (awaiting != null) "Check-in" else "Your next task", onBack) {
         if (awaiting != null) {
             SoftCard {
-                Text("you said you'd:", style = MaterialTheme.typography.titleMedium)
+                Text("You said you'd:", style = MaterialTheme.typography.titleMedium)
                 Text("“${awaiting.text}”", style = MaterialTheme.typography.headlineSmall)
-                Text("did you do it?", style = MaterialTheme.typography.titleLarge)
-                Muted("no judgement here. honest always wins. a \"no\" just means writing a fresh task.")
+                Text("Did you do it?", style = MaterialTheme.typography.titleLarge)
+                Muted("No judgement here. Honesty always wins. A \"no\" just means writing a fresh task.")
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    PrimaryButton("yes ✅", { scope.launch { engine.answerCheckIn(awaiting, CheckIn.DONE); justAnswered = CheckIn.DONE } }, Modifier.weight(1f))
-                    SecondaryButton("no 😅", { scope.launch { engine.answerCheckIn(awaiting, CheckIn.NOT_DONE); justAnswered = CheckIn.NOT_DONE } }, Modifier.weight(1f))
+                    PrimaryButton("Yes", { scope.launch { engine.answerCheckIn(awaiting, CheckIn.DONE); justAnswered = CheckIn.DONE } }, Modifier.weight(1f))
+                    SecondaryButton("No", { scope.launch { engine.answerCheckIn(awaiting, CheckIn.NOT_DONE); justAnswered = CheckIn.NOT_DONE } }, Modifier.weight(1f))
                 }
             }
             return@Screen
@@ -53,7 +55,7 @@ fun TaskScreen(onBack: () -> Unit, onDone: () -> Unit) {
 
         justAnswered?.let {
             Text(
-                if (it == CheckIn.DONE) "let's gooo 🔥 one more for the streak." else "thanks for keeping it real 🫡 tomorrow's another go.",
+                if (it == CheckIn.DONE) "Nice work. One more for the streak." else "Thanks for being honest. Tomorrow is another go.",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -62,17 +64,17 @@ fun TaskScreen(onBack: () -> Unit, onDone: () -> Unit) {
         val day = engine.nextTaskDay(data)
         val forToday = day == engine.today()
         SoftCard {
-            Text(if (forToday) "one thing you'll do today" else "one thing you'll do tomorrow", style = MaterialTheme.typography.titleLarge)
-            Muted("anything, as long as you could tick it off. small and specific > big and vague.")
+            CardTitle(if (forToday) "One thing you'll do today" else "One thing you'll do tomorrow", Ic.Edit)
+            Muted("Anything you could tick off. Small and specific beats big and vague.")
             OutlinedTextField(
                 value = text,
                 onValueChange = { text = it; message = null },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("call the bank before noon") },
+                placeholder = { Text("Call the bank before noon") },
             )
             message?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
         }
-        PrimaryButton("save", onClick = {
+        PrimaryButton("Save", onClick = {
             scope.launch {
                 when (val r = engine.writeTask(text)) {
                     is ValidationResult.Invalid -> message = r.message

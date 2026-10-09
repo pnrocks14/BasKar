@@ -16,5 +16,8 @@ sealed interface LockState {
 
     data class TaskLocked(val gate: TaskGate) : LockState
 
-    val blocksReels: Boolean get() = this is Cooldown || this is BudgetLocked || this is TaskLocked
+    /** Inside the daily focus hours; squats can't open it. [endMinute] counts from midnight. */
+    data class FocusLocked(val endMinute: Int) : LockState
+
+    val blocksReels: Boolean get() = this is Cooldown || this is BudgetLocked || this is TaskLocked || this is FocusLocked
 }

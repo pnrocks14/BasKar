@@ -1,11 +1,14 @@
 package app.pratyahara.detection
 
 import app.pratyahara.core.detection.DetectionRule
+import app.pratyahara.core.detection.Signal.ActionRow
 import app.pratyahara.core.detection.Signal.AllLabelsPresent
+import app.pratyahara.core.detection.Signal.AllOf
 import app.pratyahara.core.detection.Signal.FullScreenPager
 import app.pratyahara.core.detection.Signal.LabelPresent
 import app.pratyahara.core.detection.Signal.RightActionStack
 import app.pratyahara.core.detection.Signal.SelectedTab
+import app.pratyahara.core.detection.Signal.ViewIdContains
 import app.pratyahara.core.detection.Signal.ViewIdPresent
 import app.pratyahara.core.detection.WeightedSignal
 
@@ -36,6 +39,11 @@ object DetectionRules {
         signals = listOf(
             WeightedSignal(SelectedTab(setOf("reels")), 3),
             WeightedSignal(ViewIdPresent(setOf("clips_viewer_view_pager", "clips_viewer_container", "clips_video_container")), 4),
+            // Instagram's code calls Reels "clips"; the player keeps that name wherever it opens (Explore,
+            // a shared reel in DMs, a profile). Only big views count, so a reel preview in a chat doesn't.
+            WeightedSignal(ViewIdContains(setOf("clips_"), exclude = setOf("clips_tab"), minHeight = 0.5), 2),
+            // Posts opened from Explore scroll on forever too: the Explore tab plus a post's like/comment row.
+            WeightedSignal(AllOf(listOf(SelectedTab(setOf("explore")), ActionRow(setOf("like", "comment", "share", "send")))), 4),
             WeightedSignal(FullScreenPager(), 2),
             WeightedSignal(RightActionStack(setOf("like", "comment", "share", "send", "remix")), 2),
             WeightedSignal(LabelPresent(setOf("original audio", "reels audio", "audio ·", "• audio")), 1),

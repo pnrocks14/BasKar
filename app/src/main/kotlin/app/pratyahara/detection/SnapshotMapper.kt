@@ -41,4 +41,34 @@ object SnapshotMapper {
         }
         return UiSnapshot(root.packageName?.toString().orEmpty(), screenWidth, screenHeight, out)
     }
+
+    /** Button words worth keeping in a shared layout. Any other text is replaced, so nothing personal leaves the phone. */
+    private val keepWords = listOf(
+        "like", "comment", "share", "send", "remix", "reels", "reel", "home", "explore", "search", "profile",
+        "posts", "followers", "following", "follow", "original audio", "audio", "shorts", "subscribe", "messages",
+    )
+
+    private fun redact(label: String?): String? {
+        val l = label?.lowercase()?.trim() ?: return null
+        if (l.isEmpty()) return null
+        return keepWords.filter { l.contains(it) }.joinToString("+").ifEmpty { "…" }
+    }
+
+    /**
+     * A layout description the user can copy from the Detection check screen and send to the developer:
+     * view classes, IDs, positions and known button words only.
+     */
+    fun describe(s: UiSnapshot): String = buildString {
+        appendLine("${s.packageName} ${s.screenWidth}x${s.screenHeight} nodes=${s.nodes.size}")
+        for (n in s.nodes) {
+            if (n.viewId == null && n.label.isEmpty() && !n.scrollable && !n.selected) continue
+            append(n.className?.substringAfterLast('.') ?: "?")
+            n.viewId?.let { append(" #").append(it) }
+            redact(n.text)?.let { append(" t=").append(it) }
+            redact(n.contentDescription)?.let { append(" d=").append(it) }
+            if (n.selected) append(" SEL")
+            if (n.scrollable) append(" SCROLL")
+            appendLine(" [${n.left},${n.top},${n.right},${n.bottom}]")
+        }
+    }
 }

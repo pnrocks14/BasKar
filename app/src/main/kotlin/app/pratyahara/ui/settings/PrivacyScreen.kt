@@ -8,7 +8,7 @@ import app.pratyahara.ui.components.Screen
 /** Same text as docs/play/privacy-policy.md. Keep the two in sync. */
 @Composable
 fun PrivacyScreen(onBack: () -> Unit) {
-    Screen("privacy policy", onBack) {
+    Screen("Privacy policy", onBack) {
         PRIVACY_POLICY.split("\n\n").forEach { Text(it, style = MaterialTheme.typography.bodyLarge) }
     }
 }

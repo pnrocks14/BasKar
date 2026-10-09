@@ -33,9 +33,9 @@ class Buddy(
         watchingSinceQuote = 0
         val left = leftLine(minutesLeft)
         return if (visitsToday <= 1) {
-            Chip(Chip.Kind.HELLO, "hii 👀 i'm watching you", left)
+            Chip(Chip.Kind.HELLO, "Hi, I'm watching you", left)
         } else {
-            Chip(Chip.Kind.AGAIN, AGAIN[Math.floorMod(seed + visitsToday, AGAIN.size.toLong()).toInt()], "visit #$visitsToday today · $left")
+            Chip(Chip.Kind.AGAIN, AGAIN[Math.floorMod(seed + visitsToday, AGAIN.size.toLong()).toInt()], "Visit $visitsToday today · $left")
         }
     }
 
@@ -53,11 +53,11 @@ class Buddy(
         if (secondsLeft in 1..60 && !warned1) {
             warned1 = true
             warned5 = true
-            return Chip(Chip.Kind.WARNING, "last minute ⏳", "make it count, then we're done for today")
+            return Chip(Chip.Kind.WARNING, "Last minute", "Make it count, then that's it for today")
         }
         if (secondsLeft in 61..300 && !warned5) {
             warned5 = true
-            return Chip(Chip.Kind.WARNING, "${(secondsLeft + 59) / 60} min left ✌️", "start wrapping up")
+            return Chip(Chip.Kind.WARNING, "${(secondsLeft + 59) / 60} minutes left", "A good moment to start wrapping up")
         }
         watchingSinceQuote++
         if (quoteEverySeconds > 0 && watchingSinceQuote >= quoteEverySeconds) {
@@ -69,18 +69,18 @@ class Buddy(
     }
 
     private fun leftLine(minutesLeft: Long) = when {
-        minutesLeft <= 0 -> "no reels time left today"
-        minutesLeft == 1L -> "1 min of reels left today"
-        else -> "$minutesLeft min of reels left today"
+        minutesLeft <= 0 -> "No Reels time left today"
+        minutesLeft == 1L -> "1 minute of Reels left today"
+        else -> "$minutesLeft minutes of Reels left today"
     }
 
     companion object {
         val AGAIN = listOf(
-            "you again? 👀",
-            "back so soon? 🤨",
-            "oh hey, reels again 👀",
-            "not you opening reels again 💀",
-            "we meet again 👁️👄👁️",
+            "You again?",
+            "Back so soon?",
+            "Oh hey, Reels again",
+            "Here we go again",
+            "We meet again",
         )
     }
 }

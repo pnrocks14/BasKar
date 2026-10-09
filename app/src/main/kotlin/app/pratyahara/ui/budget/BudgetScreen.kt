@@ -19,6 +19,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.pratyahara.core.budget.BudgetRequestResult
 import app.pratyahara.core.budget.DelayTable
 import app.pratyahara.engine
+import app.pratyahara.ui.components.CardTitle
+import app.pratyahara.ui.components.Ic
 import app.pratyahara.ui.components.Muted
 import app.pratyahara.ui.components.PrimaryButton
 import app.pratyahara.ui.components.Screen
@@ -37,31 +39,31 @@ fun BudgetScreen(onBack: () -> Unit) {
     var message by remember { mutableStateOf<String?>(null) }
     val raising = target > data.budgetMinutes
 
-    Screen("daily limit ⏱️", onBack) {
+    Screen("Daily limit", onBack) {
         SoftCard {
-            Text("now: ${data.budgetMinutes} min a day", style = MaterialTheme.typography.titleLarge)
+            CardTitle("Now: ${data.budgetMinutes} min a day", Ic.Timer)
             Stepper(target, "min", DelayTable.MIN_BUDGET_MINUTES, DelayTable.MAX_BUDGET_MINUTES, 5) {
                 target = it
                 message = null
             }
             when {
-                target < data.budgetMinutes -> Muted("lowering applies right away. love that for you 🫶")
+                target < data.budgetMinutes -> Muted("Lowering applies right away. Good call.")
                 raising -> Muted(
-                    "raising by ${target - data.budgetMinutes} min kicks in after " +
+                    "Raising by ${target - data.budgetMinutes} min takes effect after " +
                         formatWait(DelayTable.increaseDelay(target - data.budgetMinutes).toMillis()) +
-                        ". bigger jump, longer wait."
+                        ". A bigger jump means a longer wait."
                 )
             }
         }
         if (raising) {
             SoftCard {
-                Text("why do you need more? 🤔", style = MaterialTheme.typography.titleLarge)
-                Muted("2 honest sentences: what's different, and why it's worth the time. this is just for you.")
+                CardTitle("Why do you need more?", Ic.Edit)
+                Muted("Two honest sentences: what's different, and why it's worth the time. This is just for you.")
                 OutlinedTextField(
                     value = reason,
                     onValueChange = { reason = it; message = null },
                     modifier = Modifier.fillMaxWidth().heightIn(min = 140.dp),
-                    placeholder = { Text("e.g. i'm on a 6-hour train tomorrow with nothing to do...") },
+                    placeholder = { Text("For example: I'm on a 6-hour train tomorrow with nothing to do...") },
                 )
                 Muted("${reason.trim().length} / 100 characters")
             }
@@ -69,9 +71,9 @@ fun BudgetScreen(onBack: () -> Unit) {
         message?.let { Text(it, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodyLarge) }
         PrimaryButton(
             text = when {
-                raising -> "ask for ${target} min"
-                target < data.budgetMinutes -> "lower to $target min"
-                else -> "no change"
+                raising -> "Ask for ${target} min"
+                target < data.budgetMinutes -> "Lower to $target min"
+                else -> "No change"
             },
             enabled = target != data.budgetMinutes,
             onClick = {
@@ -79,7 +81,7 @@ fun BudgetScreen(onBack: () -> Unit) {
                     when (val r = engine.requestBudget(target, reason)) {
                         is BudgetRequestResult.AppliedNow -> onBack()
                         is BudgetRequestResult.Scheduled -> {
-                            message = "got it 👍 your limit becomes ${r.change.value} min in ${formatWait(r.change.delayMillis)}. cancel anytime from home."
+                            message = "Got it. Your limit becomes ${r.change.value} min in ${formatWait(r.change.delayMillis)}. You can cancel it from Home."
                             reason = ""
                         }
                         is BudgetRequestResult.Rejected -> message = r.message

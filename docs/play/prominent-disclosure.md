@@ -11,7 +11,7 @@ To pause Reels and Shorts, Pratyahara needs Android's accessibility permission. 
 - It never reads, saves or sends your messages, posts, searches or anything else on screen. Screen content is checked in memory and immediately discarded.
 - The only things it saves are counts: minutes spent on Reels and Shorts, and how often they were paused or unlocked.
 - Nothing leaves your phone. Pratyahara has no internet permission at all.
-- It uses the permission to show the pause screen and little check-ins on top of those apps, and, when you tap "take me back to the feed", to press back for you.
+- It uses the permission to show the pause screen, the breathing pause, small check-ins and the floating Pratyahara button on top of those apps, and to press Back for you when you tap "Back to the feed".
 
 ☐ I understand, and I agree to Pratyahara using the accessibility permission this way.
 

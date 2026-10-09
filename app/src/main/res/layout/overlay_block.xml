@@ -18,11 +18,15 @@
         android:paddingEnd="24dp"
         android:paddingBottom="40dp">
 
-        <TextView
-            android:id="@+id/emoji"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="56sp" />
+        <ImageView
+            android:id="@+id/icon"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:background="@drawable/overlay_icon_bg"
+            android:contentDescription="@null"
+            android:padding="13dp"
+            android:src="@drawable/ic_lotus"
+            android:tint="@color/on_lime" />
 
         <TextView
             android:id="@+id/title"
@@ -33,7 +37,7 @@
             android:letterSpacing="-0.02"
             android:lineSpacingMultiplier="0.95"
             android:textColor="@color/overlay_text"
-            android:textSize="32sp" />
+            android:textSize="30sp" />
 
         <TextView
             android:id="@+id/body"
@@ -59,7 +63,7 @@
                 android:layout_height="wrap_content"
                 android:lineSpacingMultiplier="1.1"
                 android:textColor="@color/overlay_text"
-                android:textSize="15sp" />
+                android:textSize="16sp" />
 
             <TextView
                 android:id="@+id/quote_source"
@@ -67,7 +71,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
                 android:textColor="@color/lime"
-                android:textSize="12sp" />
+                android:textSize="13sp" />
         </LinearLayout>
 
         <TextView

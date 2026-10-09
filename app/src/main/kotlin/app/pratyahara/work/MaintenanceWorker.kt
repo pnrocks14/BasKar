@@ -10,6 +10,7 @@ import app.pratyahara.detection.DetectionRules
 import app.pratyahara.detection.ServiceStatus
 import app.pratyahara.engine
 import app.pratyahara.notifications.Notifier
+import app.pratyahara.widget.MinutesWidget
 import kotlinx.coroutines.flow.first
 import java.time.LocalTime
 import java.util.concurrent.TimeUnit
@@ -25,6 +26,7 @@ class MaintenanceWorker(context: Context, params: WorkerParameters) : CoroutineW
         val engine = ctx.engine
         engine.store.loaded.first { it }
         engine.applyDuePending()
+        runCatching { MinutesWidget.refresh(ctx) }
         val d = engine.store.current
         if (!d.onboarded) return Result.success()
 
@@ -32,8 +34,8 @@ class MaintenanceWorker(context: Context, params: WorkerParameters) : CoroutineW
         if (d.blockingEnabled && !ServiceStatus.isEnabled(ctx)) {
             Notifier.alert(
                 ctx, Notifier.ID_SERVICE_OFF,
-                "pratyahara got switched off 😬",
-                "the accessibility permission is off, so reels and shorts aren't being limited. tap to turn it back on.",
+                "Pratyahara was switched off",
+                "The accessibility permission is off, so Reels and Shorts aren't being limited. Tap to turn it back on.",
                 route = "home",
             )
             engine.store.update { it.copy(lastServiceOffAlert = System.currentTimeMillis()) }
@@ -52,19 +54,19 @@ class MaintenanceWorker(context: Context, params: WorkerParameters) : CoroutineW
                 .joinToString { "${DetectionRules.appName(it.key)} ${it.value / 60} min" }
             val streak = engine.streaks(d)
             val summary = buildString {
-                append("today: $minutes min")
+                append("Today: $minutes min")
                 if (apps.isNotEmpty()) append(" ($apps)")
-                append(" · ${usage.visits} opens · ${usage.blocks} stops. ")
-                if (streak.honest > 0) append("honest streak: ${streak.honest} 🔥 ")
-                append(if (engine.taskAwaitingCheckIn(d) != null) "so… did you do today's task? 👀" else "what's one thing you'll do tomorrow? ✍️")
+                append(" · opened ${usage.visits} times · paused ${usage.blocks} times. ")
+                if (streak.honest > 0) append("Honest streak: ${streak.honest}. ")
+                append(if (engine.taskAwaitingCheckIn(d) != null) "Did you do today's task?" else "What's one thing you'll do tomorrow?")
             }
-            Notifier.reminder(ctx, Notifier.ID_EVENING, "evening check-in 🌆", summary, route = "task")
+            Notifier.reminder(ctx, Notifier.ID_EVENING, "Evening check-in", summary, route = "task")
             engine.store.update { it.copy(lastEveningPrompt = todayKey) }
         }
 
         val note = engine.todaysTask(d)
         if (hour in MORNING_HOURS && note != null && d.lastMorningNote != todayKey) {
-            Notifier.reminder(ctx, Notifier.ID_MORNING, "📝 note from past you", note.text, route = "home")
+            Notifier.reminder(ctx, Notifier.ID_MORNING, "A note from past you", note.text, route = "home")
             engine.store.update { it.copy(lastMorningNote = todayKey) }
         }
         return Result.success()

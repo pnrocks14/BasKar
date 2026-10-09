@@ -39,6 +39,16 @@ import app.pratyahara.core.budget.DelayTable
 import app.pratyahara.detection.DetectionRules
 import app.pratyahara.detection.ServiceStatus
 import app.pratyahara.engine
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material3.Icon
+import app.pratyahara.ui.components.Bullet
+import app.pratyahara.ui.components.CardTitle
+import app.pratyahara.ui.components.Ic
+import app.pratyahara.ui.components.IconBadge
 import app.pratyahara.ui.components.Muted
 import app.pratyahara.ui.components.PrimaryButton
 import app.pratyahara.ui.components.Screen
@@ -61,24 +71,26 @@ fun OnboardingScreen() {
 
 @Composable
 private fun Welcome(onNext: () -> Unit) {
-    Screen("pratyahara 🪷", subtitle = "the reels limiter that's actually on your side") {
+    Screen("Pratyahara", subtitle = "The Reels limiter that's on your side") {
+        IconBadge(Ic.Lotus, container = MaterialTheme.colorScheme.primaryContainer, tint = MaterialTheme.colorScheme.onPrimaryContainer, size = 64.dp)
         Text(
-            "pratyahara (प्रत्याहार) is the 5th limb of yoga: gently pulling your senses back from whatever's pulling at them. basically: you, not the algorithm, decide.",
+            "Pratyahara (प्रत्याहार) is the fifth limb of yoga: gently drawing your senses back from whatever pulls at them. You decide what you watch, not the algorithm.",
             style = MaterialTheme.typography.bodyLarge,
         )
         SoftCard {
-            Text("how it works", style = MaterialTheme.typography.titleLarge)
-            Muted("⏱️  pick a daily limit for reels + shorts. 30 min is a solid start.")
-            Muted("🎯  only reels/shorts pause. feed, DMs and profile stay open.")
-            Muted("👀  i'll check in while you scroll, with a hi and some research-backed facts.")
-            Muted("🏋️  need more? earn 5 min with squats, twice a day max.")
-            Muted("✍️  every night, one task for tomorrow. every evening, an honest \"did you do it?\"")
-            Muted("🧊  loosening a rule takes a while. tightening is instant.")
+            Text("How it works", style = MaterialTheme.typography.titleLarge)
+            Bullet(Ic.Timer, "Pick a daily limit for Reels and Shorts. 30 minutes is a good start.")
+            Bullet(Ic.Shield, "Only Reels and Shorts pause. Your feed, messages and profile stay open.")
+            Bullet(Ic.Lotus, "A short breathing pause before Reels opens, so every visit is a choice.")
+            Bullet(Ic.Eye, "Friendly check-ins while you scroll, with research-backed facts.")
+            Bullet(Ic.Fitness, "Need more time? Earn 5 minutes with squats, twice a day at most.")
+            Bullet(Ic.Edit, "Each night, one task for tomorrow. Each evening, an honest \"did you do it?\"")
+            Bullet(Ic.Hourglass, "Loosening a rule takes a while. Tightening one is instant.")
         }
         SoftCard(container = MaterialTheme.colorScheme.primaryContainer) {
-            Text("firm in the moment, flexible after a pause. that's the deal 🤝", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
+            Text("Firm in the moment, flexible after a pause. That's the deal.", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
         }
-        PrimaryButton("let's go", onNext)
+        PrimaryButton("Get started", onNext)
     }
 }
 
@@ -88,35 +100,35 @@ private fun Disclosure(onAccept: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var agreed by remember { mutableStateOf(false) }
-    Screen("before we start blocking", subtitle = "the boring-but-important bit. please actually read it 🙏") {
+    Screen("Before we start", subtitle = "The important part. Please take a minute to read it.") {
         SoftCard {
-            Text("pratyahara uses the Accessibility Service API", style = MaterialTheme.typography.titleLarge)
+            CardTitle("Pratyahara uses the Accessibility Service API", Ic.Shield)
             Text(
-                "to pause reels and shorts, pratyahara needs android's accessibility permission. here's exactly what it does with it:",
+                "To pause Reels and Shorts, Pratyahara needs Android's accessibility permission. Here's exactly what it does with it:",
                 style = MaterialTheme.typography.bodyLarge,
             )
-            Muted("• it only looks at the apps you pick (like Instagram, YouTube or TikTok). it doesn't run in any other app.")
-            Muted("• inside those apps it checks the layout of the screen, like which tab is selected and whether a full-screen video player is open, to tell if you're on reels or shorts.")
-            Muted("• it never reads, saves or sends your messages, posts, searches or anything else on screen. screen content is checked in memory and thrown away right after.")
-            Muted("• the only things it saves are counts: minutes on reels and shorts, how often you opened them, and how often they were paused or unlocked.")
-            Muted("• nothing leaves your phone. pratyahara has no internet permission at all.")
-            Muted("• it uses the permission to show the pause screen and little check-ins on top of those apps, and, when you tap \"take me back to the feed\", to press back for you.")
+            Muted("• It only looks at the apps you pick (like Instagram, YouTube or TikTok). It doesn't look at any other app.")
+            Muted("• Inside those apps it checks the layout of the screen, like which tab is selected and whether a full-screen video player is open, to tell if you're on Reels or Shorts.")
+            Muted("• It never reads, saves or sends your messages, posts, searches or anything else on screen. Screen content is checked in memory and discarded right away.")
+            Muted("• The only things it saves are counts: minutes on Reels and Shorts, how often you opened them, and how often they were paused or unlocked.")
+            Muted("• Nothing leaves your phone. Pratyahara has no internet permission at all.")
+            Muted("• It uses the permission to show the pause screen, the breathing pause, small check-ins and the floating Pratyahara button on top of those apps, and to press Back for you when you tap \"Back to the feed\".")
         }
         Row(
             Modifier.fillMaxWidth().toggleable(value = agreed, role = Role.Checkbox, onValueChange = { agreed = it }),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Checkbox(checked = agreed, onCheckedChange = null)
-            Text("i understand, and i agree to pratyahara using the accessibility permission this way.", style = MaterialTheme.typography.bodyMedium)
+            Text("I understand and agree to Pratyahara using the accessibility permission this way.", style = MaterialTheme.typography.bodyMedium)
         }
-        PrimaryButton("agree + continue", enabled = agreed, onClick = {
+        PrimaryButton("Agree and continue", enabled = agreed, onClick = {
             scope.launch {
                 context.engine.acceptDisclosure()
                 onAccept()
             }
         })
         TextButton(onClick = { (context as? Activity)?.finish() }, modifier = Modifier.fillMaxWidth()) {
-            Text("not now")
+            Text("Not now")
         }
     }
 }
@@ -131,10 +143,10 @@ private fun Setup(onNext: () -> Unit) {
     var budget by remember { mutableIntStateOf(DelayTable.DEFAULT_BUDGET_MINUTES) }
     var baseline by remember { mutableIntStateOf(90) }
 
-    Screen("set your limits", subtitle = "you can tighten these anytime") {
+    Screen("Set your limits", subtitle = "You can tighten these anytime") {
         SoftCard {
-            Text("which apps? 📱", style = MaterialTheme.typography.titleLarge)
-            Muted("only their reels or shorts part gets limited.")
+            CardTitle("Which apps?", Ic.Phone)
+            Muted("Only their Reels or Shorts section gets limited.")
             DetectionRules.all.distinctBy { it.appName }.forEach { rule ->
                 val pkgs = DetectionRules.all.filter { it.appName == rule.appName }.map { it.packageName }.toSet()
                 val on = pkgs.any { it in chosen }
@@ -149,16 +161,16 @@ private fun Setup(onNext: () -> Unit) {
             }
         }
         SoftCard {
-            Text("daily reels/shorts limit ⏱️", style = MaterialTheme.typography.titleLarge)
-            Muted("30 min a day is a solid target. cutting social media to that made people feel less lonely and down in a 2018 UPenn study.")
+            CardTitle("Daily Reels and Shorts limit", Ic.Timer)
+            Muted("30 minutes a day is a good target. In a 2018 University of Pennsylvania study, cutting social media to that made people feel less lonely and down.")
             Stepper(value = budget, unit = "min", min = DelayTable.MIN_BUDGET_MINUTES, max = DelayTable.MAX_BUDGET_MINUTES, step = 5) { budget = it }
         }
         SoftCard {
-            Text("be honest: how much do you scroll now? 🫣", style = MaterialTheme.typography.titleLarge)
-            Muted("a rough daily guess. it's only used to show the time you win back.")
+            CardTitle("Be honest: how much do you scroll now?", Ic.Hourglass)
+            Muted("A rough daily guess. It's only used to show the time you win back.")
             Stepper(value = baseline, unit = "min", min = 15, max = 480, step = 15) { baseline = it }
         }
-        PrimaryButton("continue", enabled = chosen.isNotEmpty(), onClick = {
+        PrimaryButton("Continue", enabled = chosen.isNotEmpty(), onClick = {
             scope.launch {
                 engine.store.update { it.copy(monitored = chosen, budgetMinutes = budget, baselineMinutes = baseline) }
                 onNext()
@@ -180,36 +192,44 @@ private fun Permissions() {
     }
     val askNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { notificationsOn = it }
 
-    Screen("3 quick switches", subtitle = "then you're all set ✨") {
+    Screen("Three quick switches", subtitle = "Then you're all set") {
         SoftCard {
-            Text("1. accessibility 🔓", style = MaterialTheme.typography.titleLarge)
-            Muted("find pratyahara in the list (maybe under \"Downloaded apps\") and switch it on. greyed out? go to Settings → Apps → Pratyahara → ⋮ → Allow restricted settings first.")
-            if (serviceOn) Text("on ✅ ty", style = MaterialTheme.typography.titleMedium)
-            else SecondaryButton("open accessibility settings", { context.startActivity(ServiceStatus.settingsIntent()) })
+            CardTitle("1. Accessibility", Icons.Rounded.Lock)
+            Muted("Find Pratyahara in the list (it may be under \"Downloaded apps\") and switch it on. Greyed out? Go to Settings, Apps, Pratyahara, tap the three dots and choose \"Allow restricted settings\" first.")
+            if (serviceOn) Done("Switched on")
+            else SecondaryButton("Open accessibility settings", { context.startActivity(ServiceStatus.settingsIntent()) })
         }
         SoftCard {
-            Text("2. notifications 🔔", style = MaterialTheme.typography.titleLarge)
-            Muted("for the evening check-in, the morning note from past you, and a heads-up if blocking gets switched off.")
-            if (notificationsOn) Text("on ✅", style = MaterialTheme.typography.titleMedium)
-            else SecondaryButton("allow notifications", {
+            CardTitle("2. Notifications", Icons.Rounded.Notifications)
+            Muted("For the evening check-in, the morning note from past you, and a heads-up if blocking gets switched off.")
+            if (notificationsOn) Done("Allowed")
+            else SecondaryButton("Allow notifications", {
                 if (Build.VERSION.SDK_INT >= 33) askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
             })
         }
         SoftCard {
-            Text("3. battery 🔋", style = MaterialTheme.typography.titleLarge)
-            Muted("some phones kill background apps to save battery, which quietly turns blocking off. set pratyahara to \"Unrestricted\".")
-            SecondaryButton("open battery settings", {
+            CardTitle("3. Battery", Icons.Rounded.Settings)
+            Muted("Some phones stop background apps to save battery, which quietly turns blocking off. Set Pratyahara to \"Unrestricted\".")
+            SecondaryButton("Open battery settings", {
                 runCatching {
                     context.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 }
             })
         }
-        PrimaryButton(if (serviceOn) "start 🚀" else "start (do accessibility later)", onClick = {
+        PrimaryButton(if (serviceOn) "Start" else "Start (set up accessibility later)", onClick = {
             scope.launch {
                 val d = engine.store.current
                 engine.finishOnboarding(d.monitored, d.budgetMinutes, d.baselineMinutes)
             }
         })
+    }
+}
+
+@Composable
+private fun Done(text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
+        Text(text, style = MaterialTheme.typography.titleMedium)
     }
 }
 
