@@ -1,7 +1,9 @@
 package app.pratyahara.sensors
 
 import android.content.Context
+import android.media.AudioAttributes
 import android.media.AudioManager
+import android.os.Bundle
 import android.media.ToneGenerator
 import android.os.Build
 import android.os.VibrationEffect
@@ -26,7 +28,20 @@ class RepFeedback(context: Context, private val speak: Boolean) {
     private val tts: TextToSpeech? = if (speak) {
         TextToSpeech(context.applicationContext) { status ->
             ttsReady = status == TextToSpeech.SUCCESS
-            if (ttsReady) runCatching { tts?.language = Locale.getDefault() }
+            if (ttsReady) runCatching {
+                tts?.language = Locale.getDefault()
+                // A little slower and lower than default sounds calmer.
+                tts?.setSpeechRate(0.9f)
+                tts?.setPitch(0.92f)
+                tts?.setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                        .build()
+                )
+                // Wake the speech engine now, silently, so the first count isn't late.
+                tts?.speak(" ", TextToSpeech.QUEUE_FLUSH, Bundle().apply { putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, 0f) }, "warmup")
+            }
         }
     } else {
         null
@@ -39,7 +54,7 @@ class RepFeedback(context: Context, private val speak: Boolean) {
     fun rep(count: Int, target: Int) {
         buzz(40)
         if (speak && ttsReady) {
-            say(if (count >= target) "$count. done!" else "$count")
+            say(if (count >= target) "$count. Well done." else "$count")
         } else {
             tone?.startTone(ToneGenerator.TONE_PROP_BEEP, 120)
         }

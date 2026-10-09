@@ -65,4 +65,14 @@ class TaskLoopTest {
     @Test fun `next task goes to tomorrow once today has one`() {
         assertEquals(d3, TaskLoop.nextTaskDay(d2, listOf(task(d2, 1))))
     }
+
+    /** Reported from a real phone: a task written at night for tomorrow was asked about the same night. */
+    @Test fun `a task written in the evening is for tomorrow and asked about tomorrow evening`() {
+        val d1 = LocalDate.of(2026, 10, 9)
+        assertEquals(d1.plusDays(1), TaskLoop.nextTaskDay(d1, emptyList(), evening = true))
+        val t = DayTask(d1.plusDays(1), "Call the bank before noon", 1)
+        assertEquals(null, TaskLoop.taskAwaitingCheckIn(d1, listOf(t), evening = true))
+        assertEquals(null, TaskLoop.taskAwaitingCheckIn(d1.plusDays(1), listOf(t), evening = false))
+        assertEquals(t, TaskLoop.taskAwaitingCheckIn(d1.plusDays(1), listOf(t), evening = true))
+    }
 }

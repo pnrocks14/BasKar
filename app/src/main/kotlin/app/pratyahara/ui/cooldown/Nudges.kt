@@ -17,5 +17,16 @@ object Nudges {
         "Read one page of a book",
     )
 
+    /** What the cooldown says as it hands the minutes over. A little sad on purpose. */
+    val farewells = listOf(
+        "Fine. They're yours. Your goals will wait for you, they always do.",
+        "Spend them like they cost something, because they did.",
+        "Go on then. I'll be right here when they run out.",
+        "These ones, and then that really is it for today.",
+        "Enjoy them. Future you is quietly hoping you'll stop early.",
+    )
+
+    fun farewell(seed: Long): String = farewells[(Math.floorMod(seed, farewells.size.toLong())).toInt()]
+
     fun forToday(seed: Long): String = all[(Math.floorMod(seed, all.size.toLong())).toInt()]
 }

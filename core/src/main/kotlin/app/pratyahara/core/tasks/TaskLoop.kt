@@ -53,9 +53,12 @@ object TaskLoop {
         return TaskGate.OPEN
     }
 
-    /** The day the next task should be written for: today if it has none yet, otherwise tomorrow. */
-    fun nextTaskDay(today: LocalDate, tasks: List<DayTask>): LocalDate =
-        if (tasks.none { it.day == today }) today else today.plusDays(1)
+    /**
+     * The day the next task should be written for: today if it has none yet and the day is still young,
+     * otherwise tomorrow. A task written in the [evening] is always for tomorrow.
+     */
+    fun nextTaskDay(today: LocalDate, tasks: List<DayTask>, evening: Boolean = false): LocalDate =
+        if (!evening && tasks.none { it.day == today }) today else today.plusDays(1)
 
     /** True if squat unlocks are allowed today: not after a missed check-in. */
     fun squatsAllowedToday(today: LocalDate, tasks: List<DayTask>): Boolean {
@@ -63,10 +66,13 @@ object TaskLoop {
         return yesterday.checkIn != null && !yesterday.late
     }
 
-    /** The day whose task should be answered now: today's task, during today. */
-    fun taskAwaitingCheckIn(today: LocalDate, tasks: List<DayTask>): DayTask? =
+    /**
+     * The task to answer now: yesterday's if it was never answered, otherwise today's once the day is far
+     * enough along to know ([evening]). Asking at noon whether today's task got done is too early.
+     */
+    fun taskAwaitingCheckIn(today: LocalDate, tasks: List<DayTask>, evening: Boolean = true): DayTask? =
         tasks.firstOrNull { it.day == today.minusDays(1) && it.checkIn == null }
-            ?: tasks.firstOrNull { it.day == today && it.checkIn == null }
+            ?: tasks.firstOrNull { evening && it.day == today && it.checkIn == null }
 
     /** Records an answer; [today] decides whether it was given on time. */
     fun answer(task: DayTask, answer: CheckIn, today: LocalDate, nowMillis: Long): DayTask =

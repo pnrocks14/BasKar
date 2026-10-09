@@ -131,9 +131,9 @@ fun HomeScreen(go: (String) -> Unit) {
         HeroCard(state, data, usage.totalSeconds, usage.unlocks, go)
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            StatTile(Ic.Eye, "${usage.visits}", "Times opened", Modifier.weight(1f))
-            StatTile(Ic.Shield, "${usage.blocks}", "Times paused", Modifier.weight(1f))
-            StatTile(Ic.Fitness, "${usage.unlocks}/${UnlockRules.MAX_UNLOCKS_PER_DAY}", "Squat unlocks", Modifier.weight(1f))
+            StatTile(Ic.Eye, "${usage.visits}", "Reels trips", Modifier.weight(1f))
+            StatTile(Ic.Shield, "${usage.blocks}", "Times I stepped in", Modifier.weight(1f))
+            StatTile(Ic.Fitness, "${usage.unlocks}/${UnlockRules.MAX_UNLOCKS_PER_DAY}", "Squat passes", Modifier.weight(1f))
         }
 
         WeekCard(engine.recentDays(data).map { (day, u) -> day to (u.totalSeconds / 60).toInt() }, data.budgetMinutes, engine.weekSavedMinutes(data))

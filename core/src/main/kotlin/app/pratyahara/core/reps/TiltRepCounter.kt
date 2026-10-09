@@ -17,6 +17,12 @@ data class TiltConfig(
     /** High-frequency energy (RMS, m/s²) above which the phone is being shaken. */
     val shakeRms: Double = 4.0,
     val shakeCooldownMs: Long = 1_500,
+    /**
+     * During a rep the body has to actually go down and up: the phone's acceleration (beyond gravity) must
+     * swing at least this far (m/s²). Tilting a phone in your hand turns it without moving it, so it fails this.
+     * A slow 4-second squat still swings about 0.5 m/s².
+     */
+    val minMotion: Double = 0.3,
 )
 
 /**
@@ -29,7 +35,9 @@ data class TiltConfig(
  *    while standing still, so a phone that shifts in the pocket doesn't drift into false reps.
  * 3. A rep is the tilt from standing going past [TiltConfig.downDegrees] and back under [TiltConfig.upDegrees].
  *    Walking swings the thigh about 30°, which never reaches the bottom.
- * 4. Shaking (lots of high-frequency energy) pauses counting, like the chest counter.
+ * 4. The body has to move too: a squat drops the hips, so the phone accelerates down and up while it
+ *    turns. Turning the phone in your hand doesn't count.
+ * 5. Shaking (lots of high-frequency energy) pauses counting, like the chest counter.
  */
 class TiltRepCounter(private val config: TiltConfig = TiltConfig()) : SquatCounter {
 
@@ -53,6 +61,9 @@ class TiltRepCounter(private val config: TiltConfig = TiltConfig()) : SquatCount
     private var bz = 0.0
     private val magnitude = LowPass(ORIENTATION_TAU)
     private val hfEnergy = LowPass(HF_TAU)
+    private val motion = LowPass(MOTION_TAU)
+    private val gravityLevel = LowPass(GRAVITY_TAU)
+    private var motionPeak = 0.0
 
     private var previousTilt = 0.0
     private var startNanos = -1L
@@ -68,7 +79,8 @@ class TiltRepCounter(private val config: TiltConfig = TiltConfig()) : SquatCount
         depth = 0.0
         tiltDegrees = 0.0
         previousTilt = 0.0
-        listOf(ox, oy, oz, magnitude, hfEnergy).forEach { it.reset() }
+        listOf(ox, oy, oz, magnitude, hfEnergy, motion, gravityLevel).forEach { it.reset() }
+        motionPeak = 0.0
         bx = 0.0; by = 0.0; bz = 0.0
         startNanos = -1L
         lastTimeNanos = -1L
@@ -97,6 +109,9 @@ class TiltRepCounter(private val config: TiltConfig = TiltConfig()) : SquatCount
         if (rms > config.shakeRms) shakeUntilMs = nowMs + config.shakeCooldownMs
         shaking = nowMs < shakeUntilMs
 
+        // Acceleration beyond gravity, whatever way the phone faces: |a| minus its long-run level.
+        val moving = abs(motion.update(raw, step) - gravityLevel.update(raw, step))
+
         val calibrating = (timestampNanos - startNanos) < CALIBRATION_NANOS
         // While calibrating (quickly), or standing still between reps (slowly), the baseline follows the current orientation.
         val steady = abs(tiltDegrees - previousTilt) / step < STEADY_DEGREES_PER_SECOND
@@ -117,6 +132,9 @@ class TiltRepCounter(private val config: TiltConfig = TiltConfig()) : SquatCount
         tiltDegrees = Math.toDegrees(acos(cos))
         depth = (tiltDegrees / config.downDegrees).coerceIn(0.0, 1.0)
 
+        if (!down && tiltDegrees < config.upDegrees) motionPeak = 0.0
+        if (tiltDegrees >= config.upDegrees || down) motionPeak = maxOf(motionPeak, moving)
+
         if (!down) {
             if (tiltDegrees > config.downDegrees) {
                 down = true
@@ -128,7 +146,9 @@ class TiltRepCounter(private val config: TiltConfig = TiltConfig()) : SquatCount
             down = false
             val longEnough = nowMs - downSinceMs >= config.minDownMs
             val tooSoon = lastRepMs >= 0 && nowMs - lastRepMs < config.minRepIntervalMs
-            if (shaking || !longEnough || tooSoon) return false
+            val moved = motionPeak >= config.minMotion
+            motionPeak = 0.0
+            if (shaking || !longEnough || tooSoon || !moved) return false
             lastRepMs = nowMs
             reps++
             return true
@@ -141,6 +161,8 @@ class TiltRepCounter(private val config: TiltConfig = TiltConfig()) : SquatCount
         const val BASELINE_TAU = 8.0
         const val STEADY_DEGREES_PER_SECOND = 8.0
         const val HF_TAU = 0.5
+        const val MOTION_TAU = 0.15
+        const val GRAVITY_TAU = 3.0
         const val CALIBRATION_NANOS = 1_000_000_000L
     }
 }

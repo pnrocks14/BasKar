@@ -72,8 +72,11 @@ class Engine(val store: Store, val clock: Clock) {
 
     fun taskGate(d: AppData = store.current): TaskGate = TaskLoop.gate(today(), d.taskModels())
     fun streaks(d: AppData = store.current): StreakSummary = Streaks.compute(d.taskModels(), today())
-    fun taskAwaitingCheckIn(d: AppData = store.current): DayTask? = TaskLoop.taskAwaitingCheckIn(today(), d.taskModels())
-    fun nextTaskDay(d: AppData = store.current): LocalDate = TaskLoop.nextTaskDay(today(), d.taskModels())
+    fun taskAwaitingCheckIn(d: AppData = store.current): DayTask? = TaskLoop.taskAwaitingCheckIn(today(), d.taskModels(), isEvening())
+    fun nextTaskDay(d: AppData = store.current): LocalDate = TaskLoop.nextTaskDay(today(), d.taskModels(), isEvening())
+
+    /** From 6 pm until the day ends at 4 am: tasks written now are for tomorrow, and today's can be answered. */
+    fun isEvening(): Boolean = minuteOfDay() >= EVENING_FROM_MINUTE || minuteOfDay() < DayBoundary.ROLLOVER_HOUR * 60
     fun todaysTask(d: AppData = store.current): DayTask? = d.taskModels().firstOrNull { it.day == today() }
 
     fun weekSavedMinutes(d: AppData = store.current): Int {
@@ -264,5 +267,9 @@ class Engine(val store: Store, val clock: Clock) {
 
     suspend fun acceptDisclosure() {
         store.update { it.copy(disclosureAcceptedAt = clock.nowMillis()) }
+    }
+
+    private companion object {
+        const val EVENING_FROM_MINUTE = 18 * 60
     }
 }

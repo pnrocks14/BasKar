@@ -234,6 +234,8 @@ class EndToEndTest {
         waitForText("Nicely done", substring = true)
         shot("12-cooldown")
         waitUntil(15_000, "the cooldown to end") { engine.lockState() is LockState.Allowed }
+        waitForText("Here are your", substring = true)
+        shot("12b-farewell")
 
         val before = engine.store.current.day(engine.today()).totalSeconds
         context.startActivity(context.packageManager.getLaunchIntentForPackage(DetectionRules.INSTAGRAM)!!.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK))

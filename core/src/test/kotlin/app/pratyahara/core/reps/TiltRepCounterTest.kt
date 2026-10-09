@@ -38,21 +38,28 @@ class TiltRepCounterTest {
         if (local < 0 || local > count * period) 0.0 else depthDegrees * (1 - cos(2 * PI * local / period)) / 2
     }
 
+    /** The hips drop about 40 cm in a squat, so along gravity the phone accelerates down and back up. */
+    private fun hips(count: Int, period: Double, rest: Double = 2.0, dropMeters: Double = 0.4): (Double) -> Double = { t ->
+        val local = t - rest
+        val w = 2 * PI / period
+        if (local < 0 || local > count * period) 0.0 else -dropMeters / 2 * w * w * cos(w * local)
+    }
+
     private fun TiltRepCounter.feed(samples: List<Signals.Sample>) = apply { samples.forEach { onSample(it.tNanos, it.x, it.y, it.z) } }
 
     @Test fun `counts twenty pocket squats`() {
-        assertEquals(20, TiltRepCounter().feed(pocket(2.0 + 20 * 2.0 + 2.0, thighDegrees = squats(20, 2.0))).reps)
+        assertEquals(20, TiltRepCounter().feed(pocket(2.0 + 20 * 2.0 + 2.0, extra = hips(20, 2.0), thighDegrees = squats(20, 2.0))).reps)
     }
 
     @Test fun `counts half squats, slow squats and quick ones`() {
-        assertEquals(10, TiltRepCounter().feed(pocket(2.0 + 10 * 2.0 + 2.0, thighDegrees = squats(10, 2.0, depthDegrees = 60.0))).reps)
-        assertEquals(8, TiltRepCounter().feed(pocket(2.0 + 8 * 4.0 + 2.0, thighDegrees = squats(8, 4.0))).reps)
-        assertEquals(12, TiltRepCounter().feed(pocket(2.0 + 12 * 1.2 + 2.0, thighDegrees = squats(12, 1.2))).reps)
+        assertEquals(10, TiltRepCounter().feed(pocket(2.0 + 10 * 2.0 + 2.0, extra = hips(10, 2.0, dropMeters = 0.25), thighDegrees = squats(10, 2.0, depthDegrees = 60.0))).reps)
+        assertEquals(8, TiltRepCounter().feed(pocket(2.0 + 8 * 4.0 + 2.0, extra = hips(8, 4.0), thighDegrees = squats(8, 4.0))).reps)
+        assertEquals(12, TiltRepCounter().feed(pocket(2.0 + 12 * 1.2 + 2.0, extra = hips(12, 1.2), thighDegrees = squats(12, 1.2))).reps)
     }
 
     @Test fun `works however the phone sits in the pocket`() {
         for (mount in listOf(0.0, 40.0, 80.0, 170.0)) {
-            val c = TiltRepCounter().feed(pocket(2.0 + 10 * 2.0 + 2.0, mountDegrees = mount, thighDegrees = squats(10, 2.0)))
+            val c = TiltRepCounter().feed(pocket(2.0 + 10 * 2.0 + 2.0, mountDegrees = mount, extra = hips(10, 2.0), thighDegrees = squats(10, 2.0)))
             assertEquals("mounted at $mount°", 10, c.reps)
         }
     }
@@ -69,6 +76,15 @@ class TiltRepCounterTest {
     @Test fun `shaking the phone does not count`() {
         val c = TiltRepCounter().feed(pocket(20.0, extra = { t -> 14.0 * sin(2 * PI * 6.0 * t) }) { t -> 45.0 * (1 - cos(2 * PI * t / 0.4)) })
         assertTrue("counted ${c.reps}", c.reps == 0)
+    }
+
+    /** Reported from a real phone: tilting or pumping the phone in a hand counted as squats. */
+    @Test fun `turning the phone in your hand does not count`() {
+        assertEquals(0, TiltRepCounter().feed(pocket(2.0 + 15 * 2.0 + 2.0, thighDegrees = squats(15, 2.0))).reps)
+    }
+
+    @Test fun `moving the phone up and down without the thigh turning does not count`() {
+        assertEquals(0, TiltRepCounter().feed(pocket(2.0 + 15 * 1.5 + 2.0, extra = hips(15, 1.5, dropMeters = 0.6)) { 0.0 }).reps)
     }
 
     @Test fun `depth follows the squat`() {
