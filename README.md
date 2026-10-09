@@ -37,9 +37,11 @@ Every push to `main` runs the same on GitHub Actions and uploads the debug APK a
 
 ## Testing on a real phone
 
+CI also runs `app/src/androidTest` on an emulator: onboarding, the budget and task checks, and blocking inside a stand-in Instagram (`testapps/fakeinsta`). Its screenshots are on the `test-screens` branch.
+
 Accessibility services need a physical phone (recommended) or an emulator with Google Play and the target apps installed.
 
-1. Install the debug build: `adb install -r app/build/outputs/apk/debug/app-debug.apk` (or download the APK from the latest Actions run). Its package is `app.pratyahara.debug`, so it can sit beside a Play release.
+1. Download [Pratyahara.apk](https://github.com/pnrocks14/Pratyahara/releases/latest/download/Pratyahara.apk) on the phone and open it (allow installs from your browser when asked), or use `adb install -r app/build/outputs/apk/debug/app-debug.apk`. Every green push to `main` refreshes that release. Its package is `app.pratyahara.debug`, so it can sit beside a Play release.
 2. Open Pratyahara, go through onboarding and turn on the accessibility service when asked. On Android 13+ sideloaded apps need one extra step first: Settings → Apps → Pratyahara → ⋮ → **Allow restricted settings**.
 3. Set battery usage to **Unrestricted** (Xiaomi, Samsung, Oppo and Vivo kill background services aggressively).
 4. Open Instagram → Reels. Time should count on the home screen. To see a block without waiting 30 minutes, lower the daily limit to 5 minutes (lowering is instant).
