@@ -18,3 +18,5 @@ rootProject.name = "pratyahara"
 
 include(":core")
 include(":app")
+// Test-only stand-in app for the emulator tests; never shipped.
+include(":testapps:fakeinsta")

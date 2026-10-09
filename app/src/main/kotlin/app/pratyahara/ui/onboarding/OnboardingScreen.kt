@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
@@ -29,6 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
@@ -97,8 +99,11 @@ private fun Disclosure(onAccept: () -> Unit) {
             Muted("• Nothing leaves your phone. Pratyahara has no internet permission at all.")
             Muted("• It uses the permission to show a pause screen and, when you tap \"Back to the feed\", to press Back for you.")
         }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(checked = agreed, onCheckedChange = { agreed = it })
+        Row(
+            Modifier.fillMaxWidth().toggleable(value = agreed, role = Role.Checkbox, onValueChange = { agreed = it }),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Checkbox(checked = agreed, onCheckedChange = null)
             Text("I understand, and I agree to Pratyahara using the accessibility permission this way.", style = MaterialTheme.typography.bodyMedium)
         }
         PrimaryButton("Agree and continue", enabled = agreed, onClick = {
