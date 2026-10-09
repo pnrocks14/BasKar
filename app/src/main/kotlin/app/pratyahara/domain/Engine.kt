@@ -74,6 +74,12 @@ class Engine(val store: Store, val clock: Clock) {
         return TimeSaved.weekMinutes(d.baselineMinutes, used, today(), start)
     }
 
+    /** The last [days] days, oldest first, ending today. */
+    fun recentDays(d: AppData = store.current, days: Int = 7): List<Pair<LocalDate, DayUsage>> {
+        val today = today()
+        return (days - 1 downTo 0).map { back -> today.minusDays(back.toLong()).let { it to d.day(it) } }
+    }
+
     fun stamp(): Stamp = Stamp.of(clock)
 
     // ---- Usage counters (called by the accessibility service) ----
@@ -89,6 +95,20 @@ class Engine(val store: Store, val clock: Clock) {
             d.copy(days = d.days + (key to day.copy(secondsByApp = merged)))
         }
     }
+
+    /** Reels/Shorts was opened; returns today's visit count including this one. */
+    suspend fun recordVisit(): Int {
+        val key = today().toString()
+        var visits = 1
+        store.update { d ->
+            val day = d.days[key] ?: DayUsage()
+            visits = day.visits + 1
+            d.copy(days = d.days + (key to day.copy(visits = visits)))
+        }
+        return visits
+    }
+
+    suspend fun updateSettings(transform: (AppData) -> AppData) = store.update(transform)
 
     suspend fun recordBlock() {
         val key = today().toString()

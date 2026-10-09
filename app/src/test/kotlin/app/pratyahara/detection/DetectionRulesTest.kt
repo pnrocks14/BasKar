@@ -60,6 +60,36 @@ class DetectionRulesTest {
         assertTrue(engine.evaluate(s)!!.isShortForm)
     }
 
+    /** Reported from a real phone: a profile was blocked after the limit. Its grid tiles mention likes and comments. */
+    @Test fun `instagram profile with its reels grid stays open`() {
+        val grid = n(cls = "androidx.viewpager.widget.ViewPager", scrollable = true, t = 120, r = w, b = 2260)
+        val tiles = (0 until 3).flatMap { row ->
+            (0 until 3).map { col ->
+                n(desc = "Reel by someone at row ${row + 1}, column ${col + 1}. 1,204 likes, 33 comments, share", l = col * 360, t = 1200 + row * 480, r = col * 360 + 358, b = 1680 + row * 480)
+            }
+        }
+        val s = UiSnapshot(
+            DetectionRules.INSTAGRAM, w, h,
+            listOf(
+                n(text = "120 posts", t = 300, b = 360), n(text = "4,511 followers", t = 300, b = 360), n(text = "312 following", t = 300, b = 360),
+                n(desc = "Reels", selected = true, t = 1100, b = 1180), n(text = "Original audio", t = 1500, b = 1540),
+                grid, tab("Home", false, 0), tab("Reels", false, 2), tab("Profile", true, 4),
+            ) + tiles,
+        )
+        assertFalse(engine.evaluate(s)!!.isShortForm)
+    }
+
+    @Test fun `instagram reel opened from a profile is still detected`() {
+        val s = UiSnapshot(
+            DetectionRules.INSTAGRAM, w, h,
+            listOf(
+                n(id = "clips_viewer_view_pager", cls = "androidx.viewpager.widget.ViewPager", scrollable = true, r = w, b = h),
+                n(text = "Original audio", t = 2000, b = 2040), tab("Profile", true, 4),
+            ) + rightButtons("Like", "Comment", "Share").toList(),
+        )
+        assertTrue(engine.evaluate(s)!!.isShortForm)
+    }
+
     @Test fun `youtube shorts tab`() {
         val s = UiSnapshot(
             DetectionRules.YOUTUBE, w, h,

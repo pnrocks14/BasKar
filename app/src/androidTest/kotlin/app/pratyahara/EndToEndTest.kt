@@ -118,25 +118,25 @@ class EndToEndTest {
 
     @Test
     fun a_onboarding_reaches_home() {
-        compose.onNodeWithText("Let's begin").performScrollTo()
+        compose.onNodeWithText("let's go").performScrollTo()
         shot("01-welcome")
-        compose.onNodeWithText("Let's begin").performClick()
+        compose.onNodeWithText("let's go").performClick()
 
-        waitForText("Before you turn on blocking")
+        waitForText("before we start blocking")
         shot("02-disclosure")
-        compose.onNodeWithText("I understand", substring = true).performScrollTo().performClick()
-        compose.onNodeWithText("Agree and continue").performScrollTo().performClick()
+        compose.onNodeWithText("i understand", substring = true).performScrollTo().performClick()
+        compose.onNodeWithText("agree + continue").performScrollTo().performClick()
 
-        waitForText("Set your limits")
+        waitForText("set your limits")
         shot("03-limits")
-        compose.onNodeWithText("Continue").performScrollTo().performClick()
+        compose.onNodeWithText("continue").performScrollTo().performClick()
 
-        waitForText("Three switches")
+        waitForText("3 quick switches")
         shot("04-permissions")
-        compose.onNodeWithText("Start", substring = true).performScrollTo().performClick()
+        compose.onNodeWithText("start", substring = true).performScrollTo().performClick()
 
         compose.waitUntil(5_000) { context.engine.store.current.onboarded }
-        waitForText("minutes left today", substring = true)
+        waitForText("min left today")
         shot("05-home")
         assertTrue(context.engine.store.current.disclosureAcceptedAt > 0)
     }
@@ -152,20 +152,20 @@ class EndToEndTest {
     @Test
     fun c_budget_raise_needs_a_reason_and_waits() {
         ensureOnboarded()
-        waitForText("Settings")
-        compose.onNodeWithText("Settings").performScrollTo().performClick()
-        compose.onNodeWithText("Change daily limit").performScrollTo().performClick()
+        waitForText("⚙️ settings")
+        compose.onNodeWithText("⚙️ settings").performScrollTo().performClick()
+        compose.onNodeWithText("change daily limit").performScrollTo().performClick()
         compose.onNodeWithText("+").performClick()
         compose.onNode(hasSetTextAction()).performTextInput("need it")
-        compose.onNodeWithText("Ask for 35 min").performScrollTo().performClick()
+        compose.onNodeWithText("ask for 35 min").performScrollTo().performClick()
         waitForText("Give a real reason", substring = true)
         shot("06-budget-rejected")
 
         compose.onNode(hasSetTextAction()).performTextReplacement(
             "My cousin's wedding videos were all posted as reels today. I promised her I would watch every one and send my favourites tonight."
         )
-        compose.onNodeWithText("Ask for 35 min").performScrollTo().performClick()
-        waitForText("Your limit becomes 35 min", substring = true)
+        compose.onNodeWithText("ask for 35 min").performScrollTo().performClick()
+        waitForText("your limit becomes 35 min", substring = true)
         shot("07-budget-scheduled")
         assertEquals(30, context.engine.store.current.budgetMinutes)
         assertEquals(1, context.engine.store.current.pending.size)
@@ -175,11 +175,11 @@ class EndToEndTest {
     fun d_nightly_task_validation() {
         ensureOnboarded()
         compose.activityRule.scenario.onActivity { it.startActivity(MainActivity.intent(it, "task")) }
-        waitForText("Save")
-        compose.onNodeWithText("Save").performScrollTo().performClick()
+        waitForText("save")
+        compose.onNodeWithText("save").performScrollTo().performClick()
         waitForText("Write something first.")
         compose.onNode(hasSetTextAction()).performTextInput("idk")
-        compose.onNodeWithText("Save").performScrollTo().performClick()
+        compose.onNodeWithText("save").performScrollTo().performClick()
         waitForText("isn't enough on its own", substring = true)
         shot("08-task-rejected")
     }
@@ -207,19 +207,19 @@ class EndToEndTest {
         context.startActivity(context.packageManager.getLaunchIntentForPackage(DetectionRules.INSTAGRAM)!!.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK))
         assertTrue(device.wait(Until.hasObject(By.text("Fake feed")), 10_000))
         Thread.sleep(1_500)
-        assertFalse("feed must stay open", device.hasObject(By.text("Back to the feed")))
+        assertFalse("feed must stay open", device.hasObject(By.text("take me back to the feed")))
         shot("09-feed-open")
 
         device.findObject(By.desc("Reels")).click()
-        assertTrue("overlay should appear on Reels", device.wait(Until.hasObject(By.text("Back to the feed")), 10_000))
+        assertTrue("overlay should appear on Reels", device.wait(Until.hasObject(By.text("take me back to the feed")), 10_000))
         assertNotNull(device.findObject(By.textContains("5 minutes for today")))
         shot("10-reels-blocked")
         assertTrue(engine.store.current.day(engine.today()).blocks >= 1)
 
-        device.findObject(By.text("Back to the feed")).click()
+        device.findObject(By.text("take me back to the feed")).click()
         assertTrue("back should land on the feed", device.wait(Until.hasObject(By.text("Fake feed")), 10_000))
         Thread.sleep(3_000)
-        assertFalse("overlay must not come back on the feed", device.hasObject(By.text("Back to the feed")))
+        assertFalse("overlay must not come back on the feed", device.hasObject(By.text("take me back to the feed")))
         shot("11-back-on-feed")
     }
 
@@ -231,7 +231,7 @@ class EndToEndTest {
         waitUntil(what = "the cooldown to start") { engine.lockState() is LockState.Cooldown }
 
         context.startActivity(MainActivity.intent(context, "cooldown").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-        waitForText("Nicely done")
+        waitForText("nicely done", substring = true)
         shot("12-cooldown")
         waitUntil(15_000, "the cooldown to end") { engine.lockState() is LockState.Allowed }
 
@@ -240,7 +240,7 @@ class EndToEndTest {
         assertTrue(device.wait(Until.hasObject(By.text("Fake feed")), 10_000))
         device.findObject(By.desc("Reels")).click()
         Thread.sleep(2_500)
-        assertFalse("unlocked Reels must play", device.hasObject(By.text("Back to the feed")))
+        assertFalse("unlocked Reels must play", device.hasObject(By.text("take me back to the feed")))
         shot("13-reels-unlocked")
 
         waitUntil(25_000, "Reels time to be counted") {
@@ -252,10 +252,10 @@ class EndToEndTest {
     @Test
     fun g_home_after_the_day() {
         context.startActivity(MainActivity.intent(context, "home").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-        waitForText("Your wins")
+        waitForText("this week")
         shot("14-home-after")
         context.startActivity(MainActivity.intent(context, "summary").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-        waitForText("Minutes on Reels and Shorts")
+        waitForText("minutes on reels + shorts")
         shot("15-summary")
     }
 }

@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="surface">#F4F8F5</color>
-    <color name="card">#FFFFFF</color>
-    <color name="on_surface">#1B2B26</color>
-    <color name="on_surface_muted">#4E615B</color>
-    <color name="primary">#2F7D6B</color>
-    <color name="on_primary">#FFFFFF</color>
-    <color name="secondary_container">#DCEBF5</color>
-    <color name="on_secondary_container">#1C3B50</color>
-    <color name="launcher_bg">#2F7D6B</color>
+    <!-- Window background before Compose draws; matches the Compose theme in ui/theme/Theme.kt. -->
+    <color name="surface">#F5F4EF</color>
+    <color name="launcher_bg">#111111</color>
+    <color name="lime">#D4F76A</color>
+    <color name="on_lime">#141A00</color>
+
+    <!-- The pause screen is always dark. -->
+    <color name="overlay_bg">#F70D0D0F</color>
+    <color name="overlay_card">#1FFFFFFF</color>
+    <color name="overlay_outline">#4DFFFFFF</color>
+    <color name="overlay_text">#FFFFFFFF</color>
+    <color name="overlay_text_muted">#B3FFFFFF</color>
 </resources>

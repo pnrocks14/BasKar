@@ -1,6 +1,7 @@
 package app.pratyahara.detection
 
 import app.pratyahara.core.detection.DetectionRule
+import app.pratyahara.core.detection.Signal.AllLabelsPresent
 import app.pratyahara.core.detection.Signal.FullScreenPager
 import app.pratyahara.core.detection.Signal.LabelPresent
 import app.pratyahara.core.detection.Signal.RightActionStack
@@ -14,6 +15,9 @@ import app.pratyahara.core.detection.WeightedSignal
  * Each rule adds up the weights of the signals it finds on screen; at or above `threshold`,
  * the screen counts as Reels/Shorts. Keep at least two independent signals able to reach the
  * threshold on their own, so one renamed view never breaks detection.
+ *
+ * Negative weights mark screens that are clearly something else (a profile page), so look-alike layouts
+ * such as a profile's grid of reels don't add up to a block.
  *
  * Labels are matched case-insensitively against text and content descriptions, in English.
  * Use the Detection debug screen (Settings > Detection check) to see live scores on your phone.
@@ -31,10 +35,14 @@ object DetectionRules {
         sectionName = "Reels",
         signals = listOf(
             WeightedSignal(SelectedTab(setOf("reels")), 3),
-            WeightedSignal(ViewIdPresent(setOf("clips_viewer_view_pager", "clips_viewer_container", "clips_video_container")), 3),
+            WeightedSignal(ViewIdPresent(setOf("clips_viewer_view_pager", "clips_viewer_container", "clips_video_container")), 4),
             WeightedSignal(FullScreenPager(), 2),
             WeightedSignal(RightActionStack(setOf("like", "comment", "share", "send", "remix")), 2),
             WeightedSignal(LabelPresent(setOf("original audio", "reels audio", "audio ·", "• audio")), 1),
+            // Someone's profile, including your own: header counts are on screen. A reel opened from a profile
+            // still scores enough through the player's view ID and its buttons.
+            WeightedSignal(AllLabelsPresent(setOf("posts", "followers", "following")), -4),
+            WeightedSignal(ViewIdPresent(setOf("profile_header_container", "row_profile_header", "profile_header_bio_text", "profile_tab_layout")), -4),
         ),
         threshold = 4,
     )

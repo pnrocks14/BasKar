@@ -11,61 +11,80 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-// Soft sage greens and sky blues. No reds anywhere: even "locked" is calm.
+/** Accent colours shared with the overlay, which is drawn outside Compose (see res/values/colors.xml). */
+object Accent {
+    val Lime = Color(0xFFD4F76A)
+    val OnLime = Color(0xFF141A00)
+    val Violet = Color(0xFF7B61FF)
+    val Coral = Color(0xFFFF7A59)
+}
+
+// Warm paper, ink-black pills and one loud lime. Calm by default, with a little bit of fun.
 private val Light = lightColorScheme(
-    primary = Color(0xFF2F7D6B),
+    primary = Color(0xFF111111),
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFCDEBE1),
-    onPrimaryContainer = Color(0xFF0B3A30),
-    secondary = Color(0xFF4A7A9B),
+    primaryContainer = Accent.Lime,
+    onPrimaryContainer = Accent.OnLime,
+    secondary = Accent.Violet,
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFFDCEBF5),
-    onSecondaryContainer = Color(0xFF1C3B50),
-    tertiary = Color(0xFF7A8F4E),
-    tertiaryContainer = Color(0xFFE6EFD2),
-    onTertiaryContainer = Color(0xFF2B3812),
-    background = Color(0xFFF4F8F5),
-    onBackground = Color(0xFF1B2B26),
-    surface = Color(0xFFF4F8F5),
-    onSurface = Color(0xFF1B2B26),
-    surfaceVariant = Color(0xFFE3EDE8),
-    onSurfaceVariant = Color(0xFF4E615B),
+    secondaryContainer = Color(0xFFECE7FF),
+    onSecondaryContainer = Color(0xFF23175C),
+    tertiary = Accent.Coral,
+    onTertiary = Color.White,
+    tertiaryContainer = Color(0xFFFFE3D8),
+    onTertiaryContainer = Color(0xFF4A1405),
+    background = Color(0xFFF5F4EF),
+    onBackground = Color(0xFF111111),
+    surface = Color(0xFFF5F4EF),
+    onSurface = Color(0xFF111111),
+    surfaceVariant = Color(0xFFE8E7E1),
+    onSurfaceVariant = Color(0xFF6B6A66),
     surfaceContainer = Color(0xFFFFFFFF),
-    surfaceContainerHigh = Color(0xFFEDF4F0),
-    outline = Color(0xFF8FA39C),
-    error = Color(0xFF9A6B2F),
+    surfaceContainerHigh = Color(0xFFEDECE6),
+    surfaceContainerHighest = Color(0xFFE4E3DC),
+    outline = Color(0xFFBDBCB6),
+    outlineVariant = Color(0xFFDAD9D3),
+    error = Color(0xFFC2410C),
 )
 
 private val Dark = darkColorScheme(
-    primary = Color(0xFF8BD3BE),
-    onPrimary = Color(0xFF00382D),
-    primaryContainer = Color(0xFF1E5245),
-    onPrimaryContainer = Color(0xFFCDEBE1),
-    secondary = Color(0xFFA7CBE6),
-    onSecondary = Color(0xFF0E3349),
-    secondaryContainer = Color(0xFF24394A),
-    onSecondaryContainer = Color(0xFFCFE5F5),
-    tertiary = Color(0xFFC3D49B),
-    tertiaryContainer = Color(0xFF3A4A22),
-    onTertiaryContainer = Color(0xFFE6EFD2),
-    background = Color(0xFF101917),
-    onBackground = Color(0xFFE1ECE8),
-    surface = Color(0xFF101917),
-    onSurface = Color(0xFFE1ECE8),
-    surfaceVariant = Color(0xFF2A3833),
-    onSurfaceVariant = Color(0xFFA9BCB5),
-    surfaceContainer = Color(0xFF1A2522),
-    surfaceContainerHigh = Color(0xFF22302C),
-    outline = Color(0xFF6E827B),
-    error = Color(0xFFE2B77E),
+    primary = Accent.Lime,
+    onPrimary = Color(0xFF111111),
+    primaryContainer = Accent.Lime,
+    onPrimaryContainer = Accent.OnLime,
+    secondary = Color(0xFFB5A4FF),
+    onSecondary = Color(0xFF1C1150),
+    secondaryContainer = Color(0xFF2A2350),
+    onSecondaryContainer = Color(0xFFE6E0FF),
+    tertiary = Color(0xFFFF9C7F),
+    onTertiary = Color(0xFF3D1205),
+    tertiaryContainer = Color(0xFF3D2219),
+    onTertiaryContainer = Color(0xFFFFDCCF),
+    background = Color(0xFF0D0D0F),
+    onBackground = Color(0xFFF3F3F0),
+    surface = Color(0xFF0D0D0F),
+    onSurface = Color(0xFFF3F3F0),
+    surfaceVariant = Color(0xFF26262A),
+    onSurfaceVariant = Color(0xFFA3A3A0),
+    surfaceContainer = Color(0xFF19191C),
+    surfaceContainerHigh = Color(0xFF232327),
+    surfaceContainerHighest = Color(0xFF2C2C31),
+    outline = Color(0xFF4A4A4F),
+    outlineVariant = Color(0xFF333338),
+    error = Color(0xFFFF9C7F),
 )
 
 private val Type = Typography().run {
     copy(
-        headlineMedium = headlineMedium.copy(fontWeight = FontWeight.SemiBold),
-        titleLarge = titleLarge.copy(fontWeight = FontWeight.SemiBold),
+        displayLarge = TextStyle(fontSize = 88.sp, fontWeight = FontWeight.Black, lineHeight = 92.sp, letterSpacing = (-3).sp),
+        displaySmall = displaySmall.copy(fontWeight = FontWeight.Black, letterSpacing = (-1.5).sp),
+        headlineLarge = headlineLarge.copy(fontWeight = FontWeight.Black, letterSpacing = (-1).sp),
+        headlineMedium = headlineMedium.copy(fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.8).sp),
+        headlineSmall = headlineSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = (-0.4).sp),
+        titleLarge = titleLarge.copy(fontWeight = FontWeight.Bold, letterSpacing = (-0.2).sp),
+        titleMedium = titleMedium.copy(fontWeight = FontWeight.SemiBold),
         bodyLarge = bodyLarge.copy(lineHeight = 24.sp),
-        displayLarge = TextStyle(fontSize = 72.sp, fontWeight = FontWeight.Light, lineHeight = 80.sp),
+        labelLarge = labelLarge.copy(fontWeight = FontWeight.Bold),
     )
 }
 

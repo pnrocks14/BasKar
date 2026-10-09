@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- packageNames limits events to the supported apps; the service narrows it further to the apps you chose. -->
+<!-- packageNames limits events to the supported apps; the service narrows it further to the apps you chose.
+     The accessibility button (the shortcut) shows today's status; settingsActivity opens the app from Accessibility settings. -->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
     android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged|typeViewScrolled"
     android:accessibilityFeedbackType="feedbackGeneric"
-    android:accessibilityFlags="flagReportViewIds|flagIncludeNotImportantViews"
+    android:accessibilityFlags="flagReportViewIds|flagIncludeNotImportantViews|flagRequestAccessibilityButton"
     android:canRetrieveWindowContent="true"
     android:canPerformGestures="false"
     android:description="@string/accessibility_service_description"
     android:isAccessibilityTool="false"
     android:notificationTimeout="250"
     android:packageNames="com.instagram.android,com.google.android.youtube,com.zhiliaoapp.musically,com.ss.android.ugc.trill"
+    android:settingsActivity="app.pratyahara.MainActivity"
     android:summary="@string/accessibility_service_summary" />

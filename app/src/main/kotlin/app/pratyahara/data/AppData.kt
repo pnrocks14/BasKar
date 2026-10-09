@@ -35,6 +35,14 @@ data class AppData(
     val lastEveningPrompt: String? = null,
     val lastMorningNote: String? = null,
     val lastServiceOffAlert: Long = 0,
+    /** Check-ins and quotes shown at the top of the screen while scrolling. */
+    val buddyEnabled: Boolean = true,
+    /** Minutes of continuous scrolling between quotes; 0 means no quotes, only hellos and heads-ups. */
+    val quoteEveryMinutes: Int = 3,
+    /** [app.pratyahara.core.reps.PhonePlacement] name. */
+    val squatPlacement: String = "POCKET",
+    /** Count squats out loud, so the screen doesn't need watching. */
+    val voiceCount: Boolean = true,
 ) {
     fun day(day: LocalDate): DayUsage = days[day.toString()] ?: DayUsage()
     fun taskModels(): List<DayTask> = tasks.map { it.toModel() }
@@ -46,6 +54,8 @@ data class DayUsage(
     val secondsByApp: Map<String, Long> = emptyMap(),
     val blocks: Int = 0,
     val unlocks: Int = 0,
+    /** How many times Reels/Shorts was opened. */
+    val visits: Int = 0,
 ) {
     val totalSeconds: Long get() = secondsByApp.values.sum()
 }

@@ -31,6 +31,15 @@ class RepCounterTest {
         assertEquals(12, RepCounter().feed(samples).reps)
     }
 
+    /** A slow 3 s squat with the phone at the chest only peaks around 0.7 m/s². Reported missed on a real phone. */
+    @Test fun `counts slow gentle squats held at the chest`() {
+        assertEquals(10, RepCounter().feed(Signals.squats(10, periodSeconds = 3.0, amplitude = 0.75)).reps)
+    }
+
+    @Test fun `ignores small sways`() {
+        assertEquals(0, RepCounter().feed(Signals.squats(10, periodSeconds = 2.0, amplitude = 0.3)).reps)
+    }
+
     @Test fun `ignores a phone resting still`() {
         val c = RepCounter().feed(Signals.build(30.0, { 0.0 }, noise = 0.3))
         assertEquals(0, c.reps)

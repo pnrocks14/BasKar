@@ -28,25 +28,24 @@ fun CooldownScreen(onDone: () -> Unit) {
     val secondsLeft = ((data.cooldownUntil - now + 999) / 1000).coerceAtLeast(0)
     val nudge = remember { Nudges.forToday(System.currentTimeMillis() / 60_000) }
 
-    Screen("Nicely done") {
+    Screen("nicely done 💪", subtitle = "squats: done. now a tiny pause.") {
         Text(
             if (secondsLeft > 0) "$secondsLeft" else "✓",
             style = MaterialTheme.typography.displayLarge,
-            color = MaterialTheme.colorScheme.primary,
-            textAlign = TextAlign.Center,
+                        textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth(),
         )
         Muted(
-            if (secondsLeft > 0) "A short breath before you go back."
-            else "You have ${UnlockRules.UNLOCK_MINUTES} more minutes. Spend them on purpose."
+            if (secondsLeft > 0) "breathe in… breathe out… 🫧"
+            else "you've got ${UnlockRules.UNLOCK_MINUTES} more min. spend them on purpose ✌️"
         )
         SoftCard {
-            Text("Saved this week: ${formatMinutes(engine.weekSavedMinutes(data) * 60L)}", style = MaterialTheme.typography.titleLarge)
+            Text("⏳ saved this week: ${formatMinutes(engine.weekSavedMinutes(data) * 60L)}", style = MaterialTheme.typography.titleLarge)
         }
-        SoftCard(container = MaterialTheme.colorScheme.tertiaryContainer) {
-            Text("Before you go back", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onTertiaryContainer)
-            Text(nudge, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onTertiaryContainer)
+        SoftCard(container = MaterialTheme.colorScheme.primaryContainer) {
+            Text("before you go back", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
+            Text(nudge, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
         }
-        PrimaryButton("Done", onDone, enabled = secondsLeft == 0L)
+        PrimaryButton("done", onDone, enabled = secondsLeft == 0L)
     }
 }

@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- The pause screen. Always dark, whatever the phone's theme, so it reads as a clear "stop". -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/surface"
+    android:background="@color/overlay_bg"
     android:clickable="true"
     android:focusable="false">
 
@@ -11,21 +12,28 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:layout_margin="20dp"
-        android:background="@drawable/overlay_card"
         android:orientation="vertical"
         android:paddingStart="24dp"
-        android:paddingTop="28dp"
+        android:paddingTop="24dp"
         android:paddingEnd="24dp"
-        android:paddingBottom="20dp">
+        android:paddingBottom="40dp">
+
+        <TextView
+            android:id="@+id/emoji"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="56sp" />
 
         <TextView
             android:id="@+id/title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="@color/on_surface"
-            android:textSize="24sp"
-            android:textStyle="bold" />
+            android:layout_marginTop="12dp"
+            android:fontFamily="sans-serif-black"
+            android:letterSpacing="-0.02"
+            android:lineSpacingMultiplier="0.95"
+            android:textColor="@color/overlay_text"
+            android:textSize="32sp" />
 
         <TextView
             android:id="@+id/body"
@@ -33,8 +41,34 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:lineSpacingMultiplier="1.15"
-            android:textColor="@color/on_surface_muted"
+            android:textColor="@color/overlay_text_muted"
             android:textSize="17sp" />
+
+        <LinearLayout
+            android:id="@+id/quote_card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:background="@drawable/overlay_quote"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/quote"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:lineSpacingMultiplier="1.1"
+                android:textColor="@color/overlay_text"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/quote_source"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:textColor="@color/lime"
+                android:textSize="12sp" />
+        </LinearLayout>
 
         <TextView
             android:id="@+id/primary"
@@ -42,11 +76,12 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
             android:background="@drawable/overlay_button_primary"
+            android:fontFamily="sans-serif-medium"
             android:gravity="center"
-            android:minHeight="52dp"
+            android:minHeight="56dp"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
-            android:textColor="@color/on_primary"
+            android:textColor="@color/on_lime"
             android:textSize="17sp"
             android:textStyle="bold" />
 
@@ -57,9 +92,9 @@
             android:layout_marginTop="10dp"
             android:background="@drawable/overlay_button_secondary"
             android:gravity="center"
-            android:minHeight="52dp"
+            android:minHeight="56dp"
             android:text="@string/overlay_back"
-            android:textColor="@color/on_secondary_container"
+            android:textColor="@color/overlay_text"
             android:textSize="17sp" />
     </LinearLayout>
 </FrameLayout>

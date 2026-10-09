@@ -28,43 +28,44 @@ fun SummaryScreen(onBack: () -> Unit) {
     val task = engine.todaysTask(data)
     val streaks = engine.streaks(data)
 
-    Screen("Today", onBack) {
+    Screen("today's recap 📊", onBack) {
         SoftCard {
-            Text("Minutes on Reels and Shorts", style = MaterialTheme.typography.titleLarge)
-            if (usage.secondsByApp.isEmpty()) Muted("None today.")
+            Text("minutes on reels + shorts", style = MaterialTheme.typography.titleLarge)
+            if (usage.secondsByApp.isEmpty()) Muted("zero. iconic 👑")
             usage.secondsByApp.entries.sortedByDescending { it.value }.forEach { (pkg, secs) ->
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(DetectionRules.appName(pkg))
                     Text(formatMinutes(secs))
                 }
             }
-            Muted("Daily limit: ${data.budgetMinutes} min")
+            Muted("daily limit: ${data.budgetMinutes} min")
         }
         SoftCard {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                Stat("${usage.blocks}", "pauses")
+                Stat("${usage.visits}", "opens")
+                Stat("${usage.blocks}", "stops")
                 Stat("${usage.unlocks}", "unlocks")
-                Stat("${streaks.honest}", "honest days")
-                Stat("${streaks.done}", "done streak")
+                Stat("${streaks.honest}", "honest")
+                Stat("${streaks.done}", "🔥 streak")
             }
         }
         SoftCard {
-            Text("Today's task", style = MaterialTheme.typography.titleLarge)
-            if (task == null) Muted("No task was set for today.")
+            Text("today's task ✍️", style = MaterialTheme.typography.titleLarge)
+            if (task == null) Muted("no task set for today.")
             else {
                 Text("“${task.text}”")
                 Muted(
                     when (task.checkIn) {
-                        CheckIn.DONE -> "Done."
-                        CheckIn.NOT_DONE -> "Not done, and you said so honestly."
-                        null -> "Not answered yet. Check in before 4 am."
+                        CheckIn.DONE -> "done ✅"
+                        CheckIn.NOT_DONE -> "not done, and you were honest about it. respect 🫡"
+                        null -> "not answered yet. check in before 4 am."
                     }
                 )
             }
         }
         SoftCard {
-            Text("This week you saved ${formatMinutes(engine.weekSavedMinutes(data) * 60L)}", style = MaterialTheme.typography.titleLarge)
-            Muted("Compared with the ${data.baselineMinutes} min a day you estimated at the start.")
+            Text("this week you saved ${formatMinutes(engine.weekSavedMinutes(data) * 60L)} ⏳", style = MaterialTheme.typography.titleLarge)
+            Muted("vs the ${data.baselineMinutes} min a day you said you used to scroll.")
         }
     }
 }

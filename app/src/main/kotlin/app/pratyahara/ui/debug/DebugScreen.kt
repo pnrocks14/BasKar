@@ -31,7 +31,7 @@ fun DetectionCheck() {
 
 @Composable
 fun DebugScreen(onBack: () -> Unit) {
-    Screen("Detection check", onBack) {
+    Screen("detection check 🔍", onBack) {
         Muted("If Pratyahara misses Reels or pauses the wrong screen, this shows what it saw. Only scores are shown, never what's on screen.")
         DetectionCheck()
     }

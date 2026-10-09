@@ -37,31 +37,31 @@ fun BudgetScreen(onBack: () -> Unit) {
     var message by remember { mutableStateOf<String?>(null) }
     val raising = target > data.budgetMinutes
 
-    Screen("Daily limit", onBack) {
+    Screen("daily limit ⏱️", onBack) {
         SoftCard {
-            Text("Now: ${data.budgetMinutes} min a day", style = MaterialTheme.typography.titleLarge)
+            Text("now: ${data.budgetMinutes} min a day", style = MaterialTheme.typography.titleLarge)
             Stepper(target, "min", DelayTable.MIN_BUDGET_MINUTES, DelayTable.MAX_BUDGET_MINUTES, 5) {
                 target = it
                 message = null
             }
             when {
-                target < data.budgetMinutes -> Muted("Lowering applies right away. Nice.")
+                target < data.budgetMinutes -> Muted("lowering applies right away. love that for you 🫶")
                 raising -> Muted(
-                    "Raising by ${target - data.budgetMinutes} min takes effect after " +
+                    "raising by ${target - data.budgetMinutes} min kicks in after " +
                         formatWait(DelayTable.increaseDelay(target - data.budgetMinutes).toMillis()) +
-                        ". The bigger the jump, the longer the wait."
+                        ". bigger jump, longer wait."
                 )
             }
         }
         if (raising) {
             SoftCard {
-                Text("Why do you need more?", style = MaterialTheme.typography.titleLarge)
-                Muted("Two honest sentences: what's different, and why it's worth the time. This is for you, not for anyone else.")
+                Text("why do you need more? 🤔", style = MaterialTheme.typography.titleLarge)
+                Muted("2 honest sentences: what's different, and why it's worth the time. this is just for you.")
                 OutlinedTextField(
                     value = reason,
                     onValueChange = { reason = it; message = null },
                     modifier = Modifier.fillMaxWidth().heightIn(min = 140.dp),
-                    placeholder = { Text("For example: I'm on a 6-hour train tomorrow with nothing to do...") },
+                    placeholder = { Text("e.g. i'm on a 6-hour train tomorrow with nothing to do...") },
                 )
                 Muted("${reason.trim().length} / 100 characters")
             }
@@ -69,9 +69,9 @@ fun BudgetScreen(onBack: () -> Unit) {
         message?.let { Text(it, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodyLarge) }
         PrimaryButton(
             text = when {
-                raising -> "Ask for ${target} min"
-                target < data.budgetMinutes -> "Lower to $target min"
-                else -> "No change"
+                raising -> "ask for ${target} min"
+                target < data.budgetMinutes -> "lower to $target min"
+                else -> "no change"
             },
             enabled = target != data.budgetMinutes,
             onClick = {
@@ -79,7 +79,7 @@ fun BudgetScreen(onBack: () -> Unit) {
                     when (val r = engine.requestBudget(target, reason)) {
                         is BudgetRequestResult.AppliedNow -> onBack()
                         is BudgetRequestResult.Scheduled -> {
-                            message = "Got it. Your limit becomes ${r.change.value} min in ${formatWait(r.change.delayMillis)}. You can cancel from the home screen."
+                            message = "got it 👍 your limit becomes ${r.change.value} min in ${formatWait(r.change.delayMillis)}. cancel anytime from home."
                             reason = ""
                         }
                         is BudgetRequestResult.Rejected -> message = r.message

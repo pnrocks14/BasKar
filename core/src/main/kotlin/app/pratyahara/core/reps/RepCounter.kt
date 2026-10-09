@@ -4,8 +4,11 @@ import kotlin.math.abs
 import kotlin.math.sqrt
 
 data class RepConfig(
-    /** Vertical acceleration (m/s²) the smoothed signal must swing past, both ways, for a rep. */
-    val threshold: Double = 1.2,
+    /**
+     * Vertical acceleration (m/s²) the smoothed signal must swing past, both ways, for a rep.
+     * A slow 3 s squat with the phone at the chest peaks around 0.7 m/s², so this has to stay low.
+     */
+    val threshold: Double = 0.5,
     /** Reps faster than this are not squats. */
     val minRepIntervalMs: Long = 900,
     /** Reps slower than this still count, but a gap this long breaks the rhythm check. */
@@ -31,13 +34,17 @@ data class RepConfig(
  *
  * Pure Kotlin: feed it samples from SensorManager on the phone, or from CSV traces in tests.
  */
-class RepCounter(private val config: RepConfig = RepConfig()) {
+class RepCounter(private val config: RepConfig = RepConfig()) : SquatCounter {
 
-    var reps: Int = 0
+    override var reps: Int = 0
         private set
 
     /** True while the signal looks like shaking rather than squatting. */
-    var shaking: Boolean = false
+    override var shaking: Boolean = false
+        private set
+
+    /** How far the current swing has gone towards a counted rep, for the live meter. */
+    override var depth: Double = 0.0
         private set
 
     /** Cycles thrown out as too fast, too violent or during shaking. */
@@ -57,8 +64,9 @@ class RepCounter(private val config: RepConfig = RepConfig()) {
     private var lastRepMs = -1L
     private var shakeUntilMs = -1L
 
-    fun reset() {
+    override fun reset() {
         reps = 0
+        depth = 0.0
         shaking = false
         rejectedCycles = 0
         listOf(gx, gy, gz, smooth1, smooth2, hfEnergy).forEach { it.reset() }
@@ -72,7 +80,7 @@ class RepCounter(private val config: RepConfig = RepConfig()) {
     /**
      * Feeds one accelerometer sample (including gravity, m/s²). Returns true if this sample completed a rep.
      */
-    fun onSample(timestampNanos: Long, ax: Double, ay: Double, az: Double): Boolean {
+    override fun onSample(timestampNanos: Long, ax: Double, ay: Double, az: Double): Boolean {
         val dt = if (lastTimeNanos < 0) 0.0 else (timestampNanos - lastTimeNanos) / 1e9
         lastTimeNanos = timestampNanos
         if (dt < 0 || dt > 0.5) {
@@ -100,6 +108,7 @@ class RepCounter(private val config: RepConfig = RepConfig()) {
         shaking = nowMs < shakeUntilMs
 
         swingPeak = maxOf(swingPeak, abs(s))
+        depth = (abs(s) / (config.threshold * 2)).coerceIn(0.0, 1.0)
 
         if (!armed) {
             if (s < -config.threshold) {

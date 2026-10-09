@@ -65,6 +65,20 @@ class DetectionEngineTest {
         assertTrue(engine.evaluate(snap(reelsTab, pager))!!.isShortForm)
     }
 
+    @Test fun `wide grid tiles on the right are not an action stack`() {
+        val tiles = (0 until 3).map { node(desc = "Reel. 1,204 likes, 33 comments, share", l = 720, t = 1200 + it * 400, r = 1078, b = 1580 + it * 400) }
+        assertFalse(Signal.RightActionStack(setOf("like", "comment", "share")).matches(snap(*tiles.toTypedArray())))
+        assertTrue(Signal.RightActionStack(setOf("like", "comment", "share")).matches(snap(*actions)))
+    }
+
+    @Test fun `a negative signal can veto a look-alike screen`() {
+        val vetoed = rule.copy(signals = rule.signals + WeightedSignal(Signal.AllLabelsPresent(setOf("followers", "following")), -4))
+        val e = DetectionEngine(listOf(vetoed))
+        val profile = snap(pager, *actions, node(text = "10 followers"), node(text = "5 following"))
+        assertFalse(e.evaluate(profile)!!.isShortForm)
+        assertTrue(e.evaluate(snap(pager, *actions, node(text = "10 followers")))!!.isShortForm)
+    }
+
     @Test fun `other apps are ignored`() {
         assertNull(engine.evaluate(UiSnapshot("com.other", W, H, listOf(pager))))
     }

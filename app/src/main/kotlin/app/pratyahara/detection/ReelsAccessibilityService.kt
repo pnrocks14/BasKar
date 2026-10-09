@@ -1,16 +1,21 @@
 package app.pratyahara.detection
 
 import android.accessibilityservice.AccessibilityService
+import android.accessibilityservice.AccessibilityButtonController
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.Intent
 import android.os.PowerManager
 import android.view.accessibility.AccessibilityEvent
 import app.pratyahara.MainActivity
+import app.pratyahara.core.buddy.Buddy
+import app.pratyahara.core.buddy.Chip
 import app.pratyahara.core.detection.Debouncer
 import app.pratyahara.core.detection.DetectionEngine
 import app.pratyahara.core.detection.DetectionResult
+import app.pratyahara.core.lock.LockState
 import app.pratyahara.engine
 import app.pratyahara.overlay.BlockOverlay
+import app.pratyahara.overlay.BuddyChip
 import app.pratyahara.overlay.OverlayCopy
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
@@ -25,7 +30,8 @@ import kotlinx.coroutines.launch
 
 /**
  * Watches only the apps the user chose. When their Reels/Shorts screen is visible it counts the time,
- * and when the lock policy says so it shows a calm overlay. Screen content is scored in memory and dropped.
+ * checks in now and then with a small chip at the top, and when the lock policy says so it shows the
+ * pause screen. Screen content is scored in memory and dropped.
  */
 class ReelsAccessibilityService : AccessibilityService() {
 
@@ -33,6 +39,9 @@ class ReelsAccessibilityService : AccessibilityService() {
     private val detector = DetectionEngine(DetectionRules.all)
     private val debouncer = Debouncer(required = 2)
     private lateinit var overlay: BlockOverlay
+    private lateinit var chip: BuddyChip
+    private var buddy = Buddy()
+    private var buddyEvery = -1
 
     /** Package whose Reels/Shorts screen is visible right now, or null. */
     private var visiblePackage: String? = null
@@ -46,6 +55,11 @@ class ReelsAccessibilityService : AccessibilityService() {
         super.onServiceConnected()
         running.value = true
         overlay = BlockOverlay(this, onBack = ::goBack, onOpenRoute = ::openApp)
+        chip = BuddyChip(this)
+        // The accessibility shortcut (floating button or gesture) shows how today is going.
+        accessibilityButtonController.registerAccessibilityButtonCallback(object : AccessibilityButtonController.AccessibilityButtonCallback() {
+            override fun onClicked(controller: AccessibilityButtonController) = showStatusChip()
+        })
 
         scope.launch {
             engine.store.data.map { it.monitored }.distinctUntilChanged().collect { applyPackageFilter(it) }
@@ -61,7 +75,7 @@ class ReelsAccessibilityService : AccessibilityService() {
         info.eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or
             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED or
             AccessibilityEvent.TYPE_VIEW_SCROLLED
-        info.flags = info.flags or AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS
+        info.flags = info.flags or AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS or AccessibilityServiceInfo.FLAG_REQUEST_ACCESSIBILITY_BUTTON
         serviceInfo = info
         if (visiblePackage != null && visiblePackage !in monitored) setVisible(null)
     }
@@ -106,8 +120,57 @@ class ReelsAccessibilityService : AccessibilityService() {
             refreshOverlay()
             return
         }
+        val previous = visiblePackage
         visiblePackage = pkg
         refreshOverlay()
+        val now = System.currentTimeMillis()
+        if (pkg != null && previous == null) onReelsOpened(now)
+        if (pkg == null && previous != null) buddy.onLeave(now)
+    }
+
+    private fun onReelsOpened(now: Long) {
+        scope.launch {
+            val visits = engine.recordVisit()
+            val data = engine.store.current
+            val state = engine.lockState(data)
+            if (!data.buddyEnabled || state !is LockState.Allowed || overlay.isShowing) return@launch
+            syncBuddy(data.quoteEveryMinutes)
+            buddy.onEnter(now, visits, (state.remainingSeconds + 59) / 60)?.let { chip.show(it) }
+        }
+    }
+
+    /** Rebuilds the buddy when the quote interval changes in Settings. */
+    private fun syncBuddy(everyMinutes: Int) {
+        if (everyMinutes == buddyEvery) return
+        buddyEvery = everyMinutes
+        buddy = Buddy(quoteEverySeconds = everyMinutes * 60L)
+    }
+
+    /** One second of watching, while nothing blocks it. */
+    private fun buddySecond(pkg: String) {
+        val data = engine.store.current
+        if (!data.buddyEnabled) return
+        val state = engine.lockState(data) as? LockState.Allowed ?: return
+        syncBuddy(data.quoteEveryMinutes)
+        val left = state.remainingSeconds - (unflushedSeconds[pkg] ?: 0L)
+        buddy.onSecond(engine.today().toString(), left)?.let { if (!overlay.isShowing) chip.show(it) }
+    }
+
+    private fun showStatusChip() {
+        val data = engine.store.current
+        val usage = data.day(engine.today())
+        val line = when (val state = engine.lockState(data)) {
+            is LockState.Allowed -> "${(state.remainingSeconds + 59) / 60} min of reels left today"
+            is LockState.BudgetLocked -> "reels are done for today 🔒"
+            is LockState.TaskLocked -> "reels are waiting on your task ✍️"
+            is LockState.Cooldown -> "reels open in a few seconds"
+            LockState.Disabled -> "blocking is off rn"
+        }
+        chip.show(
+            Chip(Chip.Kind.HELLO, "hii 👋 i'm on it", "$line · ${usage.blocks} stops today · tap to open"),
+            durationMs = 5_000,
+            onTap = { openApp("home") },
+        )
     }
 
     private fun refreshOverlay() {
@@ -126,6 +189,7 @@ class ReelsAccessibilityService : AccessibilityService() {
         val rule = detector.ruleFor(pkg)
         val content = OverlayCopy.forState(state, data.budgetMinutes, rule?.sectionName ?: "Reels", data.squats, now) ?: return
         if (!overlay.isShowing) scope.launch { engine.recordBlock() }
+        chip.hide()
         overlay.show(content)
     }
 
@@ -158,6 +222,7 @@ class ReelsAccessibilityService : AccessibilityService() {
                     setVisible(null)
                 } else if (!overlay.isShowing) {
                     unflushedSeconds[pkg] = (unflushedSeconds[pkg] ?: 0L) + 1
+                    buddySecond(pkg)
                 }
             }
             refreshOverlay()
@@ -178,6 +243,7 @@ class ReelsAccessibilityService : AccessibilityService() {
     override fun onDestroy() {
         running.value = false
         if (::overlay.isInitialized) overlay.hide()
+        if (::chip.isInitialized) chip.hide()
         val batch = HashMap(unflushedSeconds)
         // Best effort: the process may be going away.
         (applicationContext as app.pratyahara.PratyaharaApp).appScope.launch { engine.addUsage(batch) }
