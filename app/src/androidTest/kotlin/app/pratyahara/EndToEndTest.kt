@@ -97,6 +97,16 @@ class EndToEndTest {
 
     private fun shell(cmd: String): String = device.executeShellCommand(cmd)
 
+    /** Waits for the fake feed, tapping "Wait" if the emulator's launcher throws up an ANR dialog over it. */
+    private fun waitForFeed(timeoutMs: Long = 15_000): Boolean {
+        val end = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < end) {
+            device.findObject(By.res("android:id/aerr_wait"))?.click()
+            if (device.wait(Until.hasObject(By.text("Fake feed")), 1_000)) return true
+        }
+        return false
+    }
+
     private fun shot(name: String) {
         val dir = File(context.filesDir, "screens").apply { mkdirs() }
         runCatching { compose.waitForIdle() }
@@ -205,7 +215,7 @@ class EndToEndTest {
         waitUntil(what = "the seeded day to load") { engine.lockState() is LockState.BudgetLocked }
 
         context.startActivity(context.packageManager.getLaunchIntentForPackage(DetectionRules.INSTAGRAM)!!.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK))
-        assertTrue(device.wait(Until.hasObject(By.text("Fake feed")), 10_000))
+        assertTrue(waitForFeed())
         Thread.sleep(1_500)
         assertFalse("feed must stay open", device.hasObject(By.text("Back to the feed")))
         shot("09-feed-open")
@@ -217,7 +227,7 @@ class EndToEndTest {
         assertTrue(engine.store.current.day(engine.today()).blocks >= 1)
 
         device.findObject(By.text("Back to the feed")).click()
-        assertTrue("back should land on the feed", device.wait(Until.hasObject(By.text("Fake feed")), 10_000))
+        assertTrue("back should land on the feed", waitForFeed())
         Thread.sleep(3_000)
         assertFalse("overlay must not come back on the feed", device.hasObject(By.text("Back to the feed")))
         shot("11-back-on-feed")
@@ -239,7 +249,7 @@ class EndToEndTest {
 
         val before = engine.store.current.day(engine.today()).totalSeconds
         context.startActivity(context.packageManager.getLaunchIntentForPackage(DetectionRules.INSTAGRAM)!!.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK))
-        assertTrue(device.wait(Until.hasObject(By.text("Fake feed")), 10_000))
+        assertTrue(waitForFeed())
         device.findObject(By.desc("Reels")).click()
         Thread.sleep(2_500)
         assertFalse("unlocked Reels must play", device.hasObject(By.text("Back to the feed")))
