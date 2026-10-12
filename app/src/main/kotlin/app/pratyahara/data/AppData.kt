@@ -46,6 +46,8 @@ data class AppData(
     val voiceCount: Boolean = true,
     /** Floating Pratyahara button, shown only inside the limited apps and Pratyahara itself. */
     val bubbleEnabled: Boolean = true,
+    /** The user closed the "two buttons" tip on Home. */
+    val shortcutTipDismissed: Boolean = false,
     /** Seconds of breathing before Reels/Shorts opens; 0 skips the pause. */
     val pauseSeconds: Int = 5,
     /** Minutes of non-stop scrolling before the pause asks again; 0 means never. */

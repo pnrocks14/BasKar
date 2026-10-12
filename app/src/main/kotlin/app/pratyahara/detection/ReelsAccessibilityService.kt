@@ -321,7 +321,12 @@ class ReelsAccessibilityService : AccessibilityService() {
             if (pkg != null) {
                 if (foreground != pkg || !power.isInteractive) {
                     setVisible(null)
-                } else if (!overlay.isShowing && !pause.isShowing) {
+                } else {
+                    // Look again every second while Reels is thought to be open, so leaving it is always
+                    // noticed, even when the app sends no events (a still screen under the pause screen).
+                    if (System.currentTimeMillis() - lastEvalAt >= 900) evaluate()
+                }
+                if (visiblePackage == pkg && foreground == pkg && power.isInteractive && !overlay.isShowing && !pause.isShowing) {
                     unflushedSeconds[pkg] = (unflushedSeconds[pkg] ?: 0L) + 1
                     buddySecond(pkg)
                     checkInIfDue(System.currentTimeMillis())

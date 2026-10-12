@@ -107,16 +107,25 @@ fun HomeScreen(go: (String) -> Unit) {
             }
         }
 
-        if (serviceOn && systemShortcut && data.bubbleEnabled) {
+        if (serviceOn && data.bubbleEnabled && !data.shortcutTipDismissed) {
             SoftCard(container = MaterialTheme.colorScheme.secondaryContainer) {
                 CardTitle("Seeing two Pratyahara buttons?", Ic.Lotus, MaterialTheme.colorScheme.onSecondaryContainer)
                 Text(
-                    "The one that shows over every app is Android's accessibility button. To keep only Pratyahara's own button, " +
-                        "which shows just inside Instagram and YouTube, open Accessibility, tap Pratyahara and switch off \"Pratyahara shortcut\". " +
-                        "Leave \"Use Pratyahara\" on, or blocking stops.",
+                    "The dark one on the right edge is Pratyahara's, and it only shows inside Instagram, YouTube and this app. " +
+                        "The other one is Android's accessibility button, which Android shows everywhere.",
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                 )
-                PrimaryButton("Open accessibility settings", { context.startActivity(ServiceStatus.settingsIntent()) })
+                Text(
+                    "To remove Android's one: drag it to the bottom of the screen and drop it on \"Remove\". " +
+                        "Or tap below and switch off \"Pratyahara shortcut\". Keep \"Use Pratyahara\" on, or blocking stops.",
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                )
+                PrimaryButton("Open Pratyahara in Accessibility", {
+                    context.startActivity(ServiceStatus.detailsIntent(context))
+                })
+                TextButton(onClick = { scope.launch { engine.updateSettings { it.copy(shortcutTipDismissed = true) } } }) {
+                    Text("I only see one, hide this")
+                }
             }
         }
 

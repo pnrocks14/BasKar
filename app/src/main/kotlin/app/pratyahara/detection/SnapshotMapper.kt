@@ -20,7 +20,12 @@ object SnapshotMapper {
         queue.addLast(root to 0)
         while (queue.isNotEmpty() && out.size < MAX_NODES) {
             val (node, depth) = queue.removeFirst()
+            // Instagram keeps screens you've left (like the Reels player) alive in the tree, just hidden.
+            // Counting them made every screen look like Reels after one visit, so hidden views and
+            // everything under them are skipped.
+            if (depth > 0 && !node.isVisibleToUser) continue
             node.getBoundsInScreen(rect)
+            if (depth > 0 && (rect.width() <= 0 || rect.height() <= 0)) continue
             out += UiNode(
                 className = node.className?.toString(),
                 viewId = node.viewIdResourceName?.substringAfter(":id/"),
