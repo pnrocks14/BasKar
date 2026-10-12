@@ -29,7 +29,7 @@ object ServiceStatus {
     /** Pratyahara's own page in Accessibility settings, where its shortcut switch is; the list on older Android. */
     fun detailsIntent(context: Context): Intent =
         if (android.os.Build.VERSION.SDK_INT >= 30) {
-            Intent(Settings.ACTION_ACCESSIBILITY_DETAILS_SETTINGS)
+            Intent("android.settings.ACCESSIBILITY_DETAILS_SETTINGS")
                 .putExtra(Intent.EXTRA_COMPONENT_NAME, ComponentName(context, ReelsAccessibilityService::class.java).flattenToString())
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         } else {

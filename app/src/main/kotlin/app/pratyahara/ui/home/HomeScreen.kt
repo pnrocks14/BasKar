@@ -121,7 +121,7 @@ fun HomeScreen(go: (String) -> Unit) {
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                 )
                 PrimaryButton("Open Pratyahara in Accessibility", {
-                    context.startActivity(ServiceStatus.detailsIntent(context))
+                    runCatching { context.startActivity(ServiceStatus.detailsIntent(context)) }.onFailure { context.startActivity(ServiceStatus.settingsIntent()) }
                 })
                 TextButton(onClick = { scope.launch { engine.updateSettings { it.copy(shortcutTipDismissed = true) } } }) {
                     Text("I only see one, hide this")
