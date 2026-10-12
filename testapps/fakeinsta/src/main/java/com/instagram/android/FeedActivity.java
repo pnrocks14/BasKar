@@ -8,7 +8,10 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-/** Home feed: a list with an inline like button and a bottom nav where "Home" is selected. */
+/**
+ * Home feed: a list with an inline like button and a bottom nav where "Home" is selected.
+ * Like the real app, it keeps a Reels player alive off screen, which must not count as Reels.
+ */
 public class FeedActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,7 +29,25 @@ public class FeedActivity extends Activity {
         lp.leftMargin = 40;
         root.addView(like, lp);
         root.addView(Nav.build(this, false), new FrameLayout.LayoutParams(-1, 180, Gravity.BOTTOM));
+        root.addView(hiddenReels(), new FrameLayout.LayoutParams(-1, -1));
         setContentView(root);
+    }
+
+    /** A full Reels player with its buttons, still attached and visible, but moved off screen. */
+    private FrameLayout hiddenReels() {
+        FrameLayout player = new FrameLayout(this);
+        player.setId(R.id.clips_viewer_view_pager);
+        LinearLayout actions = new LinearLayout(this);
+        actions.setOrientation(LinearLayout.VERTICAL);
+        for (String label : new String[] {"Like", "Comment", "Share"}) {
+            TextView b = new TextView(this);
+            b.setText(label.substring(0, 1));
+            b.setContentDescription(label);
+            actions.addView(b, new LinearLayout.LayoutParams(120, 140));
+        }
+        player.addView(actions, new FrameLayout.LayoutParams(-2, -2, Gravity.END | Gravity.CENTER_VERTICAL));
+        player.setTranslationX(5000);
+        return player;
     }
 
     static final class Nav {
