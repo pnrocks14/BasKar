@@ -74,6 +74,9 @@ class EndToEndTest {
         // By default a test's UiAutomation switches every accessibility service off, ours included.
         Configurator.getInstance().uiAutomationFlags = UiAutomation.FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES
         device = UiDevice.getInstance(instrumentation)
+        // The CI emulator's launcher sometimes freezes in the background; its dialog would swallow our taps.
+        shell("settings put secure anr_show_background 0")
+        dismissAnr()
         runBlocking { context.engine.store.loaded.first { it } }
     }
 
@@ -97,11 +100,15 @@ class EndToEndTest {
 
     private fun shell(cmd: String): String = device.executeShellCommand(cmd)
 
+    private fun dismissAnr() {
+        device.findObject(By.res("android:id/aerr_wait"))?.click()
+    }
+
     /** Waits for the fake feed, tapping "Wait" if the emulator's launcher throws up an ANR dialog over it. */
     private fun waitForFeed(timeoutMs: Long = 15_000): Boolean {
         val end = System.currentTimeMillis() + timeoutMs
         while (System.currentTimeMillis() < end) {
-            device.findObject(By.res("android:id/aerr_wait"))?.click()
+            dismissAnr()
             if (device.wait(Until.hasObject(By.text("Fake feed")), 1_000)) return true
         }
         return false
@@ -119,6 +126,7 @@ class EndToEndTest {
         val end = System.currentTimeMillis() + timeoutMs
         while (System.currentTimeMillis() < end) {
             if (check()) return
+            dismissAnr()
             Thread.sleep(250)
         }
         throw AssertionError("Timed out waiting for $what")
@@ -220,8 +228,9 @@ class EndToEndTest {
         assertFalse("feed must stay open", device.hasObject(By.text("Back to the feed")))
         shot("09-feed-open")
 
+        dismissAnr()
         device.findObject(By.desc("Reels")).click()
-        assertTrue("overlay should appear on Reels", device.wait(Until.hasObject(By.text("Back to the feed")), 10_000))
+        waitUntil(10_000, "the overlay on Reels") { device.hasObject(By.text("Back to the feed")) }
         assertNotNull(device.findObject(By.textContains("5 minutes for today")))
         shot("10-reels-blocked")
         assertTrue(engine.store.current.day(engine.today()).blocks >= 1)
@@ -250,6 +259,7 @@ class EndToEndTest {
         val before = engine.store.current.day(engine.today()).totalSeconds
         context.startActivity(context.packageManager.getLaunchIntentForPackage(DetectionRules.INSTAGRAM)!!.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK))
         assertTrue(waitForFeed())
+        dismissAnr()
         device.findObject(By.desc("Reels")).click()
         Thread.sleep(2_500)
         assertFalse("unlocked Reels must play", device.hasObject(By.text("Back to the feed")))
