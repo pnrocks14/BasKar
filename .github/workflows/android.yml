@@ -30,6 +30,15 @@ jobs:
       - name: Lint
         run: ./gradlew :app:lintDebug
 
+      # The Play build: minified, unsigned. It is signed with the private upload key outside CI.
+      - name: Build Play bundle
+        run: ./gradlew :app:bundleRelease --stacktrace
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pratyahara-play-bundle
+          path: app/build/outputs/bundle/release/*.aab
+
       - uses: actions/upload-artifact@v4
         with:
           name: pratyahara-debug-apk
@@ -66,7 +75,14 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       - name: Build app, tests and stand-in Instagram
-        run: ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest :testapps:fakeinsta:assembleDebug
+        run: ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest :testapps:fakeinsta:assembleDebug :app:assembleRelease
+
+      # The minified Play build must at least start: sign it with the beta key just to install it here.
+      - name: Sign the release APK for a smoke test
+        run: |
+          BT="$ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools | sort -V | tail -1)"
+          "$BT/zipalign" -f 4 app/build/outputs/apk/release/app-release-unsigned.apk release-aligned.apk
+          "$BT/apksigner" sign --ks app/beta.keystore --ks-pass pass:pratyahara-beta --ks-key-alias beta --out release-smoke.apk release-aligned.apk
 
       - name: Run on emulator
         uses: reactivecircus/android-emulator-runner@v2
@@ -81,6 +97,11 @@ jobs:
             adb install -r testapps/fakeinsta/build/outputs/apk/debug/fakeinsta-debug.apk
             ./gradlew :app:connectedDebugAndroidTest -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true || touch tests-failed
             adb exec-out run-as app.pratyahara.beta tar c files/screens > screens.tar || true
+            adb install -r release-smoke.apk
+            adb shell am start -W -n app.pratyahara/.MainActivity
+            sleep 8
+            adb shell pidof app.pratyahara || { echo "Release build is not running"; adb logcat -d -s AndroidRuntime:E | tail -60; touch tests-failed; }
+            adb shell uiautomator dump /sdcard/release.xml > /dev/null; adb shell cat /sdcard/release.xml | grep -q "Get started" || { echo "Release build did not show the welcome screen"; adb logcat -d -s AndroidRuntime:E | tail -60; touch tests-failed; }
             test ! -f tests-failed
 
       - name: Unpack screenshots
@@ -132,6 +153,11 @@ jobs:
           name: pratyahara-debug-apk
           path: apk
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: pratyahara-play-bundle
+          path: aab
+
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -140,12 +166,13 @@ jobs:
           src=$(ls apk/*.apk | head -1)
           cp "$src" Pratyahara.apk
           cp "$src" "Pratyahara-$TAG.apk"
+          cp aab/*.aab "Pratyahara-$TAG-play-unsigned.aab"
           notes="Test build for sideloading, from commit ${GITHUB_SHA::7}. Install Pratyahara.apk on your phone; see the README section \"Testing on a real phone\". Package app.pratyahara.beta, signed with the beta key, so it is not the Play Store build."
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
-            gh release upload "$TAG" Pratyahara.apk "Pratyahara-$TAG.apk" --clobber --repo "$GITHUB_REPOSITORY"
+            gh release upload "$TAG" Pratyahara.apk "Pratyahara-$TAG.apk" "Pratyahara-$TAG-play-unsigned.aab" --clobber --repo "$GITHUB_REPOSITORY"
             gh release edit "$TAG" --notes "$notes" --repo "$GITHUB_REPOSITORY"
           else
-            gh release create "$TAG" Pratyahara.apk "Pratyahara-$TAG.apk" \
+            gh release create "$TAG" Pratyahara.apk "Pratyahara-$TAG.apk" "Pratyahara-$TAG-play-unsigned.aab" \
               --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
               --title "Pratyahara $TAG (test build)" --notes "$notes"
           fi
