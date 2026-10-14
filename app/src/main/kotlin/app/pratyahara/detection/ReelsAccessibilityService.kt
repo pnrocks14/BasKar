@@ -1,7 +1,6 @@
 package app.pratyahara.detection
 
 import android.accessibilityservice.AccessibilityService
-import android.accessibilityservice.AccessibilityButtonController
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.Intent
 import android.os.PowerManager
@@ -69,10 +68,6 @@ class ReelsAccessibilityService : AccessibilityService() {
         chip = BuddyChip(this)
         pause = PauseOverlay(this, onContinue = ::pauseContinue, onLeave = ::goBack)
         bubble = FloatingBubble(this, onTap = ::showStatusChip)
-        // The accessibility shortcut (floating button or gesture) shows how today is going.
-        accessibilityButtonController.registerAccessibilityButtonCallback(object : AccessibilityButtonController.AccessibilityButtonCallback() {
-            override fun onClicked(controller: AccessibilityButtonController) = showStatusChip()
-        })
 
         scope.launch {
             engine.store.data.map { it.monitored }.distinctUntilChanged().collect { applyPackageFilter(it) }
@@ -88,7 +83,7 @@ class ReelsAccessibilityService : AccessibilityService() {
         info.eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or
             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED or
             AccessibilityEvent.TYPE_VIEW_SCROLLED
-        info.flags = info.flags or AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS or AccessibilityServiceInfo.FLAG_REQUEST_ACCESSIBILITY_BUTTON
+        info.flags = info.flags or AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS
         serviceInfo = info
         if (visiblePackage != null && visiblePackage !in monitored) setVisible(null)
     }
