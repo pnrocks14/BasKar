@@ -79,13 +79,10 @@ private fun Welcome(onNext: () -> Unit) {
         )
         SoftCard {
             Text("How it works", style = MaterialTheme.typography.titleLarge)
-            Bullet(Ic.Timer, "Pick a daily limit for Reels and Shorts. 30 minutes is a good start.")
-            Bullet(Ic.Shield, "Only Reels and Shorts pause. Your feed, messages and profile stay open.")
-            Bullet(Ic.Lotus, "A short breathing pause before Reels opens, so every visit is a choice.")
-            Bullet(Ic.Eye, "Friendly check-ins while you scroll, with research-backed facts.")
+            Bullet(Ic.Timer, "You pick a daily limit for Reels and Shorts. Your feed, messages and profile always stay open.")
+            Bullet(Ic.Lotus, "A few calm breaths before Reels opens, so each visit is a choice and not a reflex.")
             Bullet(Ic.Fitness, "Need more time? Earn 5 minutes with squats, twice a day at most.")
-            Bullet(Ic.Edit, "Each night, one task for tomorrow. Each evening, an honest \"did you do it?\"")
-            Bullet(Ic.Hourglass, "Loosening a rule takes a while. Tightening one is instant.")
+            Bullet(Ic.Chart, "A short report every Sunday, and strict mode for the days you need backup.")
         }
         SoftCard(container = MaterialTheme.colorScheme.primaryContainer) {
             Text("Firm in the moment, flexible after a pause. That's the deal.", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
@@ -197,7 +194,9 @@ private fun Permissions() {
             CardTitle("1. Accessibility", Icons.Rounded.Lock)
             Muted("Find Pratyahara in the list (it may be under \"Downloaded apps\") and switch it on. Greyed out? Go to Settings, Apps, Pratyahara, tap the three dots and choose \"Allow restricted settings\" first.")
             if (serviceOn) Done("Switched on")
-            else SecondaryButton("Open accessibility settings", { context.startActivity(ServiceStatus.settingsIntent()) })
+            else SecondaryButton("Open accessibility settings", {
+                runCatching { context.startActivity(ServiceStatus.detailsIntent(context)) }.onFailure { context.startActivity(ServiceStatus.settingsIntent()) }
+            })
         }
         SoftCard {
             CardTitle("2. Notifications", Icons.Rounded.Notifications)

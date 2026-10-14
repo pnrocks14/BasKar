@@ -95,6 +95,9 @@ fun HomeScreen(go: (String) -> Unit) {
             Pill("${streaks.done}-day streak", icon = Ic.Flame)
             Pill("${streaks.honest} honest check-ins", icon = Icons.Rounded.CheckCircle)
         }
+        if (engine.strictActive(data)) {
+            Pill("Strict mode · ${engine.strictRemaining(data)} left", icon = Ic.Lock, container = MaterialTheme.colorScheme.primaryContainer, content = MaterialTheme.colorScheme.onPrimaryContainer)
+        }
 
         if (data.blockingEnabled && !serviceOn) {
             SoftCard(container = MaterialTheme.colorScheme.tertiaryContainer) {

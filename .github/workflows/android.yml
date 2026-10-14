@@ -80,7 +80,7 @@ jobs:
           script: |
             adb install -r testapps/fakeinsta/build/outputs/apk/debug/fakeinsta-debug.apk
             ./gradlew :app:connectedDebugAndroidTest -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true || touch tests-failed
-            adb exec-out run-as app.pratyahara.debug tar c files/screens > screens.tar || true
+            adb exec-out run-as app.pratyahara.beta tar c files/screens > screens.tar || true
             test ! -f tests-failed
 
       - name: Unpack screenshots
@@ -140,7 +140,7 @@ jobs:
           src=$(ls apk/*.apk | head -1)
           cp "$src" Pratyahara.apk
           cp "$src" "Pratyahara-$TAG.apk"
-          notes="Test build for sideloading, from commit ${GITHUB_SHA::7}. Install Pratyahara.apk on your phone; see the README section \"Testing on a real phone\". Package app.pratyahara.debug, signed with the public test key, so it is not the Play Store build."
+          notes="Test build for sideloading, from commit ${GITHUB_SHA::7}. Install Pratyahara.apk on your phone; see the README section \"Testing on a real phone\". Package app.pratyahara.beta, signed with the beta key, so it is not the Play Store build."
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
             gh release upload "$TAG" Pratyahara.apk "Pratyahara-$TAG.apk" --clobber --repo "$GITHUB_REPOSITORY"
             gh release edit "$TAG" --notes "$notes" --repo "$GITHUB_REPOSITORY"

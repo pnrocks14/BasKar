@@ -12,6 +12,7 @@ import app.pratyahara.engine
 import app.pratyahara.notifications.Notifier
 import app.pratyahara.widget.MinutesWidget
 import kotlinx.coroutines.flow.first
+import java.time.DayOfWeek
 import java.time.LocalTime
 import java.util.concurrent.TimeUnit
 
@@ -56,12 +57,30 @@ class MaintenanceWorker(context: Context, params: WorkerParameters) : CoroutineW
             val summary = buildString {
                 append("Today: $minutes min")
                 if (apps.isNotEmpty()) append(" ($apps)")
-                append(" · opened ${usage.visits} times · paused ${usage.blocks} times. ")
+                append(". ${usage.visits} trips to Reels, and I stepped in ${usage.blocks} times. ")
                 if (streak.honest > 0) append("Honest streak: ${streak.honest}. ")
                 append(if (engine.taskAwaitingCheckIn(d) != null) "Did you do today's task?" else "What's one thing you'll do tomorrow?")
             }
             Notifier.reminder(ctx, Notifier.ID_EVENING, "Evening check-in", summary, route = "task")
             engine.store.update { it.copy(lastEveningPrompt = todayKey) }
+        }
+
+        // Sunday evening: a short weekly report.
+        if (today.dayOfWeek == DayOfWeek.SUNDAY && hour >= WEEKLY_HOUR && d.lastWeeklyReport != todayKey) {
+            val r = engine.weekReport(d)
+            val less = r.minutesLess
+            val text = buildString {
+                append("${r.thisWeekMinutes} min on Reels and Shorts this week")
+                when {
+                    less == null || r.lastWeekMinutes == 0 -> append(". ")
+                    less > 0 -> append(", $less min less than last week. ")
+                    less < 0 -> append(", ${-less} min more than last week. ")
+                    else -> append(", same as last week. ")
+                }
+                append("${r.daysWithinLimit} of ${r.daysCounted} days within your limit.")
+            }
+            Notifier.reminder(ctx, Notifier.ID_WEEKLY, "Your week with Pratyahara", text, route = "summary")
+            engine.store.update { it.copy(lastWeeklyReport = todayKey) }
         }
 
         val note = engine.todaysTask(d)
@@ -74,6 +93,7 @@ class MaintenanceWorker(context: Context, params: WorkerParameters) : CoroutineW
 
     companion object {
         const val EVENING_HOUR = 21
+        const val WEEKLY_HOUR = 19
         val MORNING_HOURS = 6..11
 
         fun schedule(context: Context) {

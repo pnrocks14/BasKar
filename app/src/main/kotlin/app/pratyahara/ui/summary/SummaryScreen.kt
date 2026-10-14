@@ -11,6 +11,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.pratyahara.core.tasks.CheckIn
+import app.pratyahara.core.stats.WeekReport
+import java.time.format.TextStyle
+import java.util.Locale
 import app.pratyahara.detection.DetectionRules
 import app.pratyahara.engine
 import app.pratyahara.ui.components.CardTitle
@@ -90,10 +93,35 @@ fun SummaryScreen(onBack: () -> Unit) {
                 )
             }
         }
-        SoftCard {
-            CardTitle("You saved ${formatMinutes(engine.weekSavedMinutes(data) * 60L)} this week", Ic.Hourglass)
-            Muted("Compared with the ${data.baselineMinutes} min a day you said you used to scroll.")
+        WeekCard(engine.weekReport(data), engine.weekSavedMinutes(data), data.baselineMinutes)
+    }
+}
+
+/** The last 7 days against the 7 before, as a short report card. */
+@Composable
+private fun WeekCard(r: WeekReport, savedMinutes: Int, baselineMinutes: Int) {
+    SoftCard {
+        CardTitle("Your week", Ic.Hourglass)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text("Reels and Shorts", style = MaterialTheme.typography.bodyLarge)
+            Text(formatMinutes(r.thisWeekMinutes * 60L), style = MaterialTheme.typography.titleMedium)
         }
+        val less = r.minutesLess
+        Muted(
+            when {
+                less == null || r.lastWeekMinutes == 0 -> "Next week you'll see how it compares."
+                less > 0 -> "${formatMinutes(less * 60L)} less than the week before. That's real time back."
+                less < 0 -> "${formatMinutes(-less * 60L)} more than the week before. A fresh week starts tomorrow."
+                else -> "Exactly the same as the week before."
+            }
+        )
+        Story(Ic.Shield, "${r.daysWithinLimit} of ${plural(r.daysCounted, "day", "days")} within your limit",
+            if (r.daysCounted > 0 && r.daysWithinLimit == r.daysCounted) "A clean week. Every single day." else "Each day under the limit is a small promise kept.")
+        r.bestDay?.let { best ->
+            Story(Ic.Flame, "Best day: " + best.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault()),
+                "Your lightest day this week. Remember what made it easy.")
+        }
+        Muted("About ${formatMinutes(savedMinutes * 60L)} saved, against the $baselineMinutes min a day you said you used to scroll.")
     }
 }
 

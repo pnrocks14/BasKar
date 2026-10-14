@@ -20,6 +20,7 @@ object Notifier {
     const val ID_EVENING = 1
     const val ID_MORNING = 2
     const val ID_SERVICE_OFF = 3
+    const val ID_WEEKLY = 4
 
     fun createChannels(context: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return

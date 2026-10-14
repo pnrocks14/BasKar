@@ -56,6 +56,10 @@ data class AppData(
     val focusEnabled: Boolean = false,
     val focusStart: Int = 22 * 60 + 30,
     val focusEnd: Int = 7 * 60,
+    /** Strict mode runs until this time; see [app.pratyahara.core.lock.StrictMode]. */
+    val strictUntil: Long = 0,
+    /** ISO day the weekly report was last sent. */
+    val lastWeeklyReport: String? = null,
 ) {
     fun day(day: LocalDate): DayUsage = days[day.toString()] ?: DayUsage()
     fun taskModels(): List<DayTask> = tasks.map { it.toModel() }

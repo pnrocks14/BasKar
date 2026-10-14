@@ -14,6 +14,12 @@ import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.ui.text.style.TextAlign
 import app.pratyahara.core.lock.FocusHours
+import app.pratyahara.core.lock.StrictMode
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import app.pratyahara.ui.components.PrimaryButton
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import app.pratyahara.ui.components.CardTitle
 import app.pratyahara.ui.components.Ic
 import androidx.compose.foundation.rememberScrollState
@@ -49,6 +55,7 @@ fun SettingsScreen(onBack: () -> Unit, go: (String) -> Unit) {
     val scope = rememberCoroutineScope()
     val data by engine.store.data.collectAsStateWithLifecycle()
     val pending = data.pendingModels()
+    val strict = engine.strictActive(data)
     fun waiting(type: ChangeType, value: String? = null) =
         pending.any { it.type == type && (value == null || it.value == value) }
 
@@ -59,11 +66,14 @@ fun SettingsScreen(onBack: () -> Unit, go: (String) -> Unit) {
                 Box(Modifier.weight(1f)) { CardTitle("Blocking", Ic.Shield) }
                 Switch(
                     checked = data.blockingEnabled && !waiting(ChangeType.DISABLE_BLOCKING),
+                    enabled = !strict,
                     onCheckedChange = { on -> scope.launch { engine.setBlockingEnabled(on) } },
                 )
             }
             if (waiting(ChangeType.DISABLE_BLOCKING)) Muted("Switching off in 24 hours unless you cancel.")
         }
+
+        StrictCard()
 
         SoftCard {
             CardTitle("Apps", Ic.Phone)
@@ -73,7 +83,7 @@ fun SettingsScreen(onBack: () -> Unit, go: (String) -> Unit) {
                 val leaving = pkgs.any { waiting(ChangeType.REMOVE_APP, it) }
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text("${rule.appName} ${rule.sectionName}", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                    Switch(checked = on && !leaving, onCheckedChange = { want ->
+                    Switch(checked = on && !leaving, enabled = !(strict && on), onCheckedChange = { want ->
                         scope.launch { pkgs.forEach { engine.setAppMonitored(it, want) } }
                     })
                 }
@@ -188,7 +198,36 @@ private fun FocusCard() {
         if (data.focusEnabled) {
             TimeRow("From", data.focusStart, editable) { v -> scope.launch { engine.setFocus(true, v, data.focusEnd) } }
             TimeRow("Until", data.focusEnd, editable) { v -> scope.launch { engine.setFocus(true, data.focusStart, v) } }
-            if (!editable) Muted("Focus hours are on right now, so they can't be changed until ${FocusHours.format(data.focusEnd)}.")
+            if (!editable && !engine.strictActive(data)) Muted("Focus hours are on right now, so they can't be changed until ${FocusHours.format(data.focusEnd)}.")
+        }
+        if (engine.strictActive(data)) Muted("Strict mode is on, so focus hours stay as they are for ${engine.strictRemaining(data)}.")
+    }
+}
+
+@Composable
+private fun StrictCard() {
+    val engine = LocalContext.current.engine
+    val scope = rememberCoroutineScope()
+    val data by engine.store.data.collectAsStateWithLifecycle()
+    var days by remember { mutableIntStateOf(StrictMode.DURATIONS_DAYS[1]) }
+    SoftCard {
+        CardTitle("Strict mode", Ic.Lock)
+        if (engine.strictActive(data)) {
+            Text("On for ${engine.strictRemaining(data)}", style = MaterialTheme.typography.titleMedium)
+            Muted("Until then nothing can be loosened, not even with a 24-hour wait. Blocking stays on, apps stay limited, the limit can't go up and squat passes are off. Tightening still works.")
+            Text("Make it longer", style = MaterialTheme.typography.titleMedium)
+        } else {
+            Muted("For the days you don't trust yourself. While it's on, nothing can be loosened, not even with a 24-hour wait, and squat passes are off. You can't end it early.")
+        }
+        // It can't be undone, so it takes two taps.
+        var confirming by remember { mutableStateOf(false) }
+        val span = if (days == 1) "1 day" else "$days days"
+        Choices(StrictMode.DURATIONS_DAYS.map { it to if (it == 1) "1 day" else "$it days" }, days) { days = it; confirming = false }
+        if (confirming) {
+            PrimaryButton("Yes, lock it for $span", { scope.launch { engine.startStrict(days) }; confirming = false })
+            Muted("This can't be undone until the time is up.")
+        } else {
+            SecondaryButton(if (engine.strictActive(data)) "Extend to $span from now" else "Start strict mode for $span", { confirming = true })
         }
     }
 }

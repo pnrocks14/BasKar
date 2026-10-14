@@ -9,8 +9,10 @@ import app.pratyahara.core.budget.withRequest
 import app.pratyahara.core.lock.LockInputs
 import app.pratyahara.core.lock.LockPolicy
 import app.pratyahara.core.lock.LockState
+import app.pratyahara.core.lock.StrictMode
 import app.pratyahara.core.lock.UnlockRules
 import app.pratyahara.core.stats.TimeSaved
+import app.pratyahara.core.stats.WeekReport
 import app.pratyahara.core.tasks.CheckIn
 import app.pratyahara.core.tasks.DayTask
 import app.pratyahara.core.tasks.StreakSummary
@@ -57,8 +59,8 @@ class Engine(val store: Store, val clock: Clock) {
                 minuteOfDay = minuteOfDay(),
             )
         )
-        // After a missed check-in, squats can't buy time today.
-        if (state is LockState.BudgetLocked && !TaskLoop.squatsAllowedToday(today, tasks)) {
+        // After a missed check-in, or during strict mode, squats can't buy time.
+        if (state is LockState.BudgetLocked && (!TaskLoop.squatsAllowedToday(today, tasks) || strictActive(d))) {
             state = LockState.BudgetLocked(unlocksLeft = 0)
         }
         return state
@@ -68,7 +70,37 @@ class Engine(val store: Store, val clock: Clock) {
         java.time.Instant.ofEpochMilli(clock.nowMillis()).atZone(zone).toLocalTime().let { it.hour * 60 + it.minute }
 
     /** Focus hours can't be loosened while they're on, or they'd be one tap away from useless. */
-    fun focusEditable(d: AppData = store.current): Boolean = d.focusHours()?.isActive(minuteOfDay()) != true
+    fun focusEditable(d: AppData = store.current): Boolean = d.focusHours()?.isActive(minuteOfDay()) != true && !strictActive(d)
+
+    fun strictActive(d: AppData = store.current): Boolean = StrictMode.isActive(d.strictUntil, clock.nowMillis())
+    fun strictRemaining(d: AppData = store.current): String = StrictMode.remaining(d.strictUntil, clock.nowMillis())
+
+    /**
+     * Starts (or extends) strict mode. Blocking turns back on and every waiting change that would loosen
+     * protection is dropped, so nothing can sneak through while it runs.
+     */
+    suspend fun startStrict(days: Int) {
+        val now = clock.nowMillis()
+        store.update {
+            it.copy(
+                strictUntil = StrictMode.extend(it.strictUntil, now, days),
+                blockingEnabled = true,
+                pending = emptyList(),
+            )
+        }
+    }
+
+    fun weekReport(d: AppData = store.current): WeekReport {
+        val byDay = d.days.mapKeys { LocalDate.parse(it.key) }
+        return WeekReport.build(
+            usedSecondsByDay = byDay.mapValues { it.value.totalSeconds },
+            visitsByDay = byDay.mapValues { it.value.visits },
+            blocksByDay = byDay.mapValues { it.value.blocks },
+            today = today(),
+            startDay = d.startDay?.let { LocalDate.parse(it) } ?: today(),
+            budgetMinutes = d.budgetMinutes,
+        )
+    }
 
     fun taskGate(d: AppData = store.current): TaskGate = TaskLoop.gate(today(), d.taskModels())
     fun streaks(d: AppData = store.current): StreakSummary = Streaks.compute(d.taskModels(), today())
@@ -152,6 +184,9 @@ class Engine(val store: Store, val clock: Clock) {
 
     suspend fun requestBudget(newMinutes: Int, reason: String): BudgetRequestResult {
         val d = store.current
+        if (strictActive(d) && newMinutes > d.budgetMinutes) {
+            return BudgetRequestResult.Rejected("Strict mode is on for ${strictRemaining(d)}. Your limit can go down, not up.")
+        }
         val result = BudgetPolicy.requestChange(d.budgetMinutes, newMinutes, reason, stamp()) { UUID.randomUUID().toString() }
         when (result) {
             is BudgetRequestResult.AppliedNow -> store.update {
@@ -172,7 +207,7 @@ class Engine(val store: Store, val clock: Clock) {
                     pending = it.pending.filterNot { p -> p.type == ChangeType.REMOVE_APP.name && p.value == packageName },
                 )
             }
-        } else {
+        } else if (!strictActive()) {
             scheduleProtection(ChangeType.REMOVE_APP, packageName)
         }
     }
@@ -182,7 +217,7 @@ class Engine(val store: Store, val clock: Clock) {
             store.update {
                 it.copy(blockingEnabled = true, pending = it.pending.filterNot { p -> p.type == ChangeType.DISABLE_BLOCKING.name })
             }
-        } else {
+        } else if (!strictActive()) {
             scheduleProtection(ChangeType.DISABLE_BLOCKING, "")
         }
     }
@@ -192,7 +227,7 @@ class Engine(val store: Store, val clock: Clock) {
         val current = store.current.squats
         if (target >= current) {
             store.update { it.copy(squats = target, pending = it.pending.filterNot { p -> p.type == ChangeType.LOWER_SQUATS.name }) }
-        } else {
+        } else if (!strictActive()) {
             scheduleProtection(ChangeType.LOWER_SQUATS, target.toString())
         }
     }
@@ -214,6 +249,7 @@ class Engine(val store: Store, val clock: Clock) {
     /** Applies every waiting change whose time has come. Safe to call often. */
     suspend fun applyDuePending() {
         val now = stamp()
+        if (strictActive()) return
         if (store.current.pendingModels().none { it.isDue(now) }) return
         store.update { d ->
             var next = d
