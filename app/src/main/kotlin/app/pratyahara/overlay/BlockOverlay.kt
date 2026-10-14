@@ -47,7 +47,7 @@ object OverlayCopy {
                 TaskGate.MISSED_CHECKIN -> OverlayContent(
                     icon = R.drawable.ic_edit,
                     title = "Yesterday's check-in is still open",
-                    body = "Tell past you how it went, then set one task for next. $section opens right after.",
+                    body = "Tell past you how it went, then set your next task. $section opens right after.",
                     primaryLabel = "Answer and write a task",
                     primaryRoute = "task",
                     quote = quote,

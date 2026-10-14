@@ -107,17 +107,17 @@ fun HomeScreen(go: (String) -> Unit) {
             }
         }
 
-        if (serviceOn && data.bubbleEnabled && !data.shortcutTipDismissed) {
+        if (serviceOn && systemShortcut && !data.shortcutTipDismissed) {
             SoftCard(container = MaterialTheme.colorScheme.secondaryContainer) {
-                CardTitle("Seeing two Pratyahara buttons?", Ic.Lotus, MaterialTheme.colorScheme.onSecondaryContainer)
+                CardTitle("You can remove Android's button", Ic.Lotus, MaterialTheme.colorScheme.onSecondaryContainer)
                 Text(
-                    "The dark one on the right edge is Pratyahara's, and it only shows inside Instagram, YouTube and this app. " +
-                        "The other one is Android's accessibility button, which Android shows everywhere.",
+                    "Android's accessibility button for Pratyahara is still switched on. You don't need it: Pratyahara's own " +
+                        "dark button shows up inside Instagram, YouTube and this app.",
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                 )
                 Text(
-                    "To remove Android's one: drag it to the bottom of the screen and drop it on \"Remove\". " +
-                        "Or tap below and switch off \"Pratyahara shortcut\". Keep \"Use Pratyahara\" on, or blocking stops.",
+                    "Tap below and switch off \"Pratyahara shortcut\", or drag the button onto \"Remove\". " +
+                        "Blocking stays on either way.",
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                 )
                 PrimaryButton("Open Pratyahara in Accessibility", {
@@ -213,7 +213,7 @@ private fun HeroCard(state: LockState, data: AppData, usedSeconds: Long, unlocks
                 is LockState.BudgetLocked -> "Reels are done for today" to "Your feed, messages and profile still work. See you tomorrow."
                 is LockState.TaskLocked -> "Reels are waiting on one task" to
                     if (state.gate == TaskGate.MISSED_CHECKIN) "Answer yesterday's check-in, then write one task. That's it."
-                    else "Write one clear task for next. The moment it's saved, they're back."
+                    else "Write one clear task. The moment it's saved, they're back."
                 is LockState.Cooldown -> "Take a breath" to "Reels open in a few seconds."
                 is LockState.FocusLocked -> "Focus hours are on" to "Reels and Shorts are closed until ${FocusHours.format(state.endMinute)}. Everything else works."
                 LockState.Disabled -> "Blocking is off" to "Time still counts. Turn it back on in Settings and it applies right away."
