@@ -21,19 +21,19 @@ android {
         applicationId = "app.pratyahara"
         minSdk = 26
         targetSdk = 36
-        versionCode = 7
-        versionName = "0.3.4"
+        versionCode = 8
+        versionName = "0.4.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     signingConfigs {
-        // A fixed, public debug key so test builds from CI install over each other.
-        // It is NOT the Play upload key; never use it for release.
+        // The sideload beta key, committed so CI builds install over each other. Not the Play upload key.
+        // (The old public Android debug key was dropped: Play Protect refused updates signed with it.)
         getByName("debug") {
-            storeFile = file("debug.keystore")
-            storePassword = "android"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
+            storeFile = file("beta.keystore")
+            storePassword = "pratyahara-beta"
+            keyAlias = "beta"
+            keyPassword = "pratyahara-beta"
         }
         if (keystoreProps.isNotEmpty()) {
             create("release") {
@@ -53,7 +53,7 @@ android {
             if (keystoreProps.isNotEmpty()) signingConfig = signingConfigs.getByName("release")
         }
         debug {
-            applicationIdSuffix = ".debug"
+            applicationIdSuffix = ".beta"
         }
     }
 

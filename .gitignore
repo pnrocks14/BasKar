@@ -10,4 +10,4 @@ build/
 *.jks
 *.keystore
 keystore.properties
-!app/debug.keystore
+!app/beta.keystore
