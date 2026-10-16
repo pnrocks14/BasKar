@@ -169,7 +169,7 @@ class ReelsAccessibilityService : AccessibilityService() {
             syncGate(data)
             // Right after a squat unlock the cooldown already was the pause.
             val justUnlocked = now - data.cooldownUntil in 0 until 120_000
-            if (gate.onEnter(now) && !justUnlocked) {
+            if (!justUnlocked && gate.onEnter(now, engine.today().toString())) {
                 val left = (state.remainingSeconds + 59) / 60
                 val section = sectionName()
                 chip.hide()
@@ -278,7 +278,12 @@ class ReelsAccessibilityService : AccessibilityService() {
         val settings = data.pauseSeconds to data.checkEveryMinutes
         if (settings == gateSettings) return
         gateSettings = settings
-        gate = MindfulGate(pauseSeconds = data.pauseSeconds, checkEveryMinutes = data.checkEveryMinutes)
+        gate = MindfulGate(
+            pauseSeconds = data.pauseSeconds,
+            checkEveryMinutes = data.checkEveryMinutes,
+            lastPauseDay = gate.lastPauseDay,
+            lastPauseAt = gate.lastPauseAt,
+        )
     }
 
     /** The floating button shows only inside a limited app or Pratyahara itself, and never over a pause screen. */

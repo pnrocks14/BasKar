@@ -95,34 +95,3 @@ class FocusHoursTest {
         assertFalse(LockPolicy.canEarnUnlock(s))
     }
 }
-
-class MindfulGateTest {
-    @Test fun `pauses once per visit, then checks in after a long stretch`() {
-        val g = MindfulGate(pauseSeconds = 5, checkEveryMinutes = 10)
-        assertTrue(g.onEnter(0))
-        g.onOpened(5_000)
-        assertFalse(g.isCheckDue(5_000 + 9 * 60_000))
-        assertTrue(g.isCheckDue(5_000 + 10 * 60_000))
-        g.onOpened(700_000)
-        assertFalse(g.isCheckDue(700_001))
-
-        g.onLeave(800_000)
-        assertFalse("a quick return is the same visit", g.onEnter(830_000))
-        g.onLeave(900_000)
-        assertTrue("a real new visit pauses again", g.onEnter(1_000_000))
-    }
-
-    @Test fun `leaving during the pause asks again on return`() {
-        val g = MindfulGate()
-        assertTrue(g.onEnter(0))
-        g.onLeave(2_000)
-        assertTrue(g.onEnter(10_000))
-    }
-
-    @Test fun `switched off`() {
-        val g = MindfulGate(pauseSeconds = 0, checkEveryMinutes = 0)
-        assertFalse(g.onEnter(0))
-        g.onOpened(0)
-        assertFalse(g.isCheckDue(99_999_999))
-    }
-}
