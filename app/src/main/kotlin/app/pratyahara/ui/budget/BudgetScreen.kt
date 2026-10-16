@@ -19,6 +19,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.pratyahara.core.budget.BudgetRequestResult
 import app.pratyahara.core.budget.DelayTable
 import app.pratyahara.engine
+import app.pratyahara.ui.MAX_TEXT
 import app.pratyahara.ui.components.CardTitle
 import app.pratyahara.ui.components.Ic
 import app.pratyahara.ui.components.Muted
@@ -61,7 +62,7 @@ fun BudgetScreen(onBack: () -> Unit) {
                 Muted("Two honest sentences: what's different, and why it's worth the time. This is just for you.")
                 OutlinedTextField(
                     value = reason,
-                    onValueChange = { reason = it; message = null },
+                    onValueChange = { reason = it.take(MAX_TEXT); message = null },
                     modifier = Modifier.fillMaxWidth().heightIn(min = 140.dp),
                     placeholder = { Text("For example: I'm on a 6-hour train tomorrow with nothing to do...") },
                 )

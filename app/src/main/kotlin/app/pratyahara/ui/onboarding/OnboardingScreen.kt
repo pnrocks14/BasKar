@@ -72,7 +72,7 @@ fun OnboardingScreen() {
 @Composable
 private fun Welcome(onNext: () -> Unit) {
     Screen("BasKar", subtitle = "The Reels limiter that's on your side") {
-        IconBadge(Ic.Lotus, container = MaterialTheme.colorScheme.primaryContainer, tint = MaterialTheme.colorScheme.onPrimaryContainer, size = 64.dp)
+        IconBadge(Ic.Hand, container = MaterialTheme.colorScheme.primaryContainer, tint = MaterialTheme.colorScheme.onPrimaryContainer, size = 64.dp)
         Text(
             "BasKar (बस कर) is Hindi for \"enough, stop it\". It's the friend who says it when one more reel turns into fifty, so you decide what you watch, not the algorithm.",
             style = MaterialTheme.typography.bodyLarge,
@@ -80,7 +80,7 @@ private fun Welcome(onNext: () -> Unit) {
         SoftCard {
             Text("How it works", style = MaterialTheme.typography.titleLarge)
             Bullet(Ic.Timer, "You pick a daily limit for Reels and Shorts. Your feed, messages and profile always stay open.")
-            Bullet(Ic.Lotus, "A few calm breaths before Reels opens, so each visit is a choice and not a reflex.")
+            Bullet(Ic.Lotus, "A few calm breaths on your first Reels of the day, and now and then after, so it stays a choice.")
             Bullet(Ic.Fitness, "Need more time? Earn 5 minutes with squats, twice a day at most.")
             Bullet(Ic.Chart, "A short report every Sunday, and strict mode for the days you need backup.")
         }
@@ -107,9 +107,10 @@ private fun Disclosure(onAccept: () -> Unit) {
             Muted("• It only looks at the apps you pick (like Instagram, YouTube or TikTok). It doesn't look at any other app.")
             Muted("• Inside those apps it checks the layout of the screen, like which tab is selected and whether a full-screen video player is open, to tell if you're on Reels or Shorts.")
             Muted("• It never reads, saves or sends your messages, posts, searches or anything else on screen. Screen content is checked in memory and discarded right away.")
-            Muted("• The only things it saves are counts: minutes on Reels and Shorts, how often you opened them, and how often they were paused or unlocked.")
+            Muted("• The only things it saves are counts: minutes on Reels and Shorts, how many reels you scrolled past, how often you opened them, and how often they were paused or unlocked.")
             Muted("• Nothing leaves your phone. BasKar has no internet permission at all.")
             Muted("• It uses the permission to show the pause screen, the breathing pause, small check-ins and the floating BasKar button on top of those apps, and to press Back for you when you tap \"Back to the feed\".")
+            Muted("• You stay in charge. You can switch it off any time in Android Settings, or uninstall BasKar.")
         }
         Row(
             Modifier.fillMaxWidth().toggleable(value = agreed, role = Role.Checkbox, onValueChange = { agreed = it }),

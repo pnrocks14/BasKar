@@ -38,7 +38,12 @@ object Routes {
     const val DEBUG = "debug"
     const val PRIVACY = "privacy"
     val all = setOf(HOME, SETTINGS, BUDGET, UNLOCK, COOLDOWN, TASK, SUMMARY, DEBUG, PRIVACY)
+    /** Screens that notifications, the widget and the overlay may open directly. Anything else in a launch intent is ignored. */
+    val external = setOf(HOME, TASK, SUMMARY)
 }
+
+/** Longest task or reason we keep. Plenty for two honest sentences, and keeps stored data small. */
+const val MAX_TEXT = 600
 
 @Composable
 fun PratyaharaNav(requestedRoute: String?, onRouteHandled: () -> Unit) {
@@ -58,7 +63,7 @@ fun PratyaharaNav(requestedRoute: String?, onRouteHandled: () -> Unit) {
     val nav = rememberNavController()
     LaunchedEffect(requestedRoute) {
         val r = requestedRoute ?: return@LaunchedEffect
-        if (r in Routes.all && r != Routes.HOME) nav.navigate(r) { launchSingleTop = true }
+        if (r in Routes.external && r != Routes.HOME) nav.navigate(r) { launchSingleTop = true }
         onRouteHandled()
     }
     val back: () -> Unit = { if (!nav.popBackStack()) nav.navigate(Routes.HOME) }

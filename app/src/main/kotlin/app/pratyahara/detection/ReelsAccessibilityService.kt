@@ -30,6 +30,8 @@ import app.pratyahara.overlay.PauseOverlay
 import app.pratyahara.overlay.OverlayCopy
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.plus
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -47,7 +49,8 @@ import kotlinx.coroutines.launch
  */
 class ReelsAccessibilityService : AccessibilityService() {
 
-    private val scope = MainScope()
+    // A failed background step (for example a storage hiccup) is dropped instead of crashing the service.
+    private val scope = MainScope() + CoroutineExceptionHandler { _, _ -> }
     private val detector = DetectionEngine(DetectionRules.all)
     private val debouncer = Debouncer(required = 2)
     private lateinit var overlay: BlockOverlay
@@ -102,6 +105,15 @@ class ReelsAccessibilityService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+        // Another app's views can vanish while we read them. A bad event is skipped; it must never stop the service.
+        try {
+            handleEvent(event)
+        } catch (e: RuntimeException) {
+            // Ignored: the next event re-reads the screen.
+        }
+    }
+
+    private fun handleEvent(event: AccessibilityEvent?) {
         val pkg = event?.packageName?.toString() ?: return
         if (pkg !in engine.store.current.monitored) return
         updateBubble(pkg)

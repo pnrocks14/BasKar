@@ -19,6 +19,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.pratyahara.core.tasks.CheckIn
 import app.pratyahara.core.validation.ValidationResult
 import app.pratyahara.engine
+import app.pratyahara.ui.MAX_TEXT
 import app.pratyahara.ui.components.CardTitle
 import app.pratyahara.ui.components.Ic
 import app.pratyahara.ui.components.Muted
@@ -68,7 +69,7 @@ fun TaskScreen(onBack: () -> Unit, onDone: () -> Unit) {
             Muted("Anything you could tick off. Small and specific beats big and vague.")
             OutlinedTextField(
                 value = text,
-                onValueChange = { text = it; message = null },
+                onValueChange = { text = it.take(MAX_TEXT); message = null },
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text("Call the bank before noon") },
             )
