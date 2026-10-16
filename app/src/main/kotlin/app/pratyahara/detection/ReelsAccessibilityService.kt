@@ -3,6 +3,7 @@ package app.pratyahara.detection
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.Intent
+import android.os.Build
 import android.os.PowerManager
 import android.view.accessibility.AccessibilityEvent
 import app.pratyahara.MainActivity
@@ -147,14 +148,15 @@ class ReelsAccessibilityService : AccessibilityService() {
         visiblePackage = pkg
         val now = System.currentTimeMillis()
         if (pkg != null && previous == null) {
-            reelCounter.onEnter(now)
-            countReel()
+            val added = reelCounter.onEnter(now)
+            if (added > 0) countReel(added)
         }
         refreshOverlay()
         if (pkg != null && previous == null) onReelsOpened(now)
         if (pkg == null && previous != null) {
             buddy.onLeave(now)
             gate.onLeave(now)
+            reelCounter.onLeave(now)
             pause.hide()
         }
         updateMeter(bump = false)
@@ -246,19 +248,24 @@ class ReelsAccessibilityService : AccessibilityService() {
     private fun onReelScroll(event: AccessibilityEvent) {
         if (visiblePackage != event.packageName?.toString() || overlay.isShowing || pause.isShowing) return
         // Ignore smaller scrollables on top of the player, like the comments sheet.
-        event.source?.let { src ->
+        val src = event.source
+        val pageHeight = if (src != null) {
             src.getBoundsInScreen(scrollRect)
             if (scrollRect.height() < resources.displayMetrics.heightPixels * 0.6) return
-        }
-        if (reelCounter.onScroll(event.fromIndex, System.currentTimeMillis())) {
-            countReel()
+            scrollRect.height()
+        } else 0
+        // scrollDeltaY exists from Android 9; older phones fall back to the index or the gesture.
+        val deltaY = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) event.scrollDeltaY else 0
+        val added = reelCounter.onScroll(event.fromIndex, deltaY, pageHeight, System.currentTimeMillis())
+        if (added > 0) {
+            countReel(added)
             updateMeter(bump = true)
         }
     }
 
     /** Saved right away, so a reel limit applies on the very next reel. */
-    private fun countReel() {
-        unflushedReels++
+    private fun countReel(n: Int = 1) {
+        unflushedReels += n
         scope.launch {
             val n = unflushedReels
             if (n <= 0) return@launch

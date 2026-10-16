@@ -1,44 +1,88 @@
 package app.pratyahara.core.reels
 
 /**
- * Counts reels swiped past while the Reels/Shorts screen is open. Pagers usually report which item is
- * on screen (an accessibility event's fromIndex), so a changed index is a new reel. Without an index,
- * each new swipe gesture counts once: scroll events in one burst belong to one swipe.
+ * Counts reels swiped past while the Reels/Shorts screen is open, including fast flicks through several.
+ *
+ * Two signals measure how far the player has moved forward, and the larger one wins:
+ * - the pager's item index (an accessibility event's fromIndex), counted from where it was on opening;
+ * - the scroll distance (scrollDeltaY), in pages of the player's height.
+ * Each only counts new ground: going back to rewatch, or a swipe that springs back, adds nothing.
+ * When an app reports neither, each new swipe gesture counts once.
  */
 class ReelCounter(
-    private val minGapMs: Long = 700,
-    private val gestureGapMs: Long = 450,
+    private val gestureGapMs: Long = 300,
+    /** A page counts once it's this far on screen, before the swipe fully settles. */
+    private val pageThreshold: Float = 0.7f,
+    private val resumeMs: Long = 120_000,
 ) {
     var count = 0
         private set
-    private var lastIndex: Int? = null
-    private var lastCountAt = 0L
+    private var baseIndex: Int? = null
+    private var maxIndex = 0
+    private var scrolledPx = 0f
+    private var maxPages = 0
+    /** Reels counted from the index or distance signals since opening. */
+    private var progress = 0
+    private var sawSignal = false
     private var lastScrollAt = 0L
 
-    /** The section opened: the reel on screen is the first one. */
-    fun onEnter(nowMs: Long) {
+    private var leftAt = -1L
+
+    /**
+     * The section opened. A fresh visit counts the reel on screen; coming back within [resumeMs]
+     * (from comments, a profile, or a brief blip in detection) is the same visit and adds nothing.
+     * Returns how many reels this adds.
+     */
+    fun onEnter(nowMs: Long): Int {
+        if (leftAt >= 0 && nowMs - leftAt < resumeMs) {
+            leftAt = -1
+            lastScrollAt = nowMs
+            return 0
+        }
+        leftAt = -1
         count = 1
-        lastIndex = null
-        lastCountAt = nowMs
-        lastScrollAt = 0L
+        baseIndex = null
+        maxIndex = 0
+        scrolledPx = 0f
+        maxPages = 0
+        progress = 0
+        sawSignal = false
+        lastScrollAt = nowMs
+        return 1
     }
 
-    /** Returns true when this scroll brought a new reel on screen. */
-    fun onScroll(fromIndex: Int, nowMs: Long): Boolean {
+    fun onLeave(nowMs: Long) {
+        leftAt = nowMs
+    }
+
+    /**
+     * A scroll event from the full-screen player. [fromIndex] is -1 when unknown, [deltaY] is 0 when unknown,
+     * and [pageHeight] is the player's height in pixels (0 when unknown). Returns how many new reels it brought.
+     */
+    fun onScroll(fromIndex: Int, deltaY: Int, pageHeight: Int, nowMs: Long): Int {
         val newGesture = nowMs - lastScrollAt >= gestureGapMs
         lastScrollAt = nowMs
-        val counted = if (fromIndex >= 0) {
-            val previous = lastIndex
-            lastIndex = fromIndex
-            previous != null && previous != fromIndex && nowMs - lastCountAt >= minGapMs
+
+        if (fromIndex >= 0) {
+            sawSignal = true
+            val base = baseIndex ?: fromIndex.also { baseIndex = it }
+            maxIndex = maxOf(maxIndex, fromIndex - base)
+        }
+        if (deltaY != 0 && pageHeight > 0) {
+            sawSignal = true
+            scrolledPx += deltaY
+            val pages = ((scrolledPx / pageHeight) + (1 - pageThreshold)).toInt()
+            maxPages = maxOf(maxPages, pages)
+        }
+
+        val added = if (sawSignal) {
+            val now = maxOf(maxIndex, maxPages)
+            (now - progress).coerceAtLeast(0).also { progress = now }
         } else {
-            newGesture && nowMs - lastCountAt >= minGapMs
+            if (newGesture) 1 else 0
         }
-        if (counted) {
-            count++
-            lastCountAt = nowMs
-        }
-        return counted
+        count += added
+        return added
     }
 }
 
