@@ -38,8 +38,8 @@ object Routes {
     const val DEBUG = "debug"
     const val PRIVACY = "privacy"
     val all = setOf(HOME, SETTINGS, BUDGET, UNLOCK, COOLDOWN, TASK, SUMMARY, DEBUG, PRIVACY)
-    /** Screens that notifications, the widget and the overlay may open directly. Anything else in a launch intent is ignored. */
-    val external = setOf(HOME, TASK, SUMMARY)
+    /** Screens that may be opened from outside (notifications, the widget, the overlay). They only show state; anything else in a launch intent is ignored. */
+    val external = setOf(HOME, TASK, SUMMARY, COOLDOWN)
 }
 
 /** Longest task or reason we keep. Plenty for two honest sentences, and keeps stored data small. */
