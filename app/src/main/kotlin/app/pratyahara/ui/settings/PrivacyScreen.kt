@@ -13,7 +13,7 @@ fun PrivacyScreen(onBack: () -> Unit) {
     }
 }
 
-const val PRIVACY_POLICY = """Baskar does not collect, share or sell any personal data. It has no internet permission, so it cannot send anything off your phone.
+const val PRIVACY_POLICY = """BasKar does not collect, share or sell any personal data. It has no internet permission, so it cannot send anything off your phone.
 
 What stays on your phone: your settings (which apps to limit, your daily limit, squat count), daily counters (minutes on Reels/Shorts per app, number of pauses and unlocks), and the tasks you write with your yes/no answers. Counters and tasks older than 60 days are deleted automatically. None of it is included in cloud backups.
 
@@ -21,4 +21,4 @@ Accessibility permission: Pratyahara uses Android's Accessibility Service API on
 
 Sensors: the accelerometer is used only while the squat screen is open, to count repetitions. Readings are not stored.
 
-Uninstalling Baskar deletes all of its data. Questions: contact the developer through the Google Play listing."""
+Uninstalling BasKar deletes all of its data. Questions: contact the developer through the Google Play listing."""

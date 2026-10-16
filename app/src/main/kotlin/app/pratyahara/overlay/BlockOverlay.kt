@@ -32,7 +32,7 @@ object OverlayCopy {
         val quote = Quotes.pick(nowMillis / (5 * 60_000))
         return when (state) {
             is LockState.BudgetLocked -> OverlayContent(
-                icon = R.drawable.ic_sun,
+                icon = R.drawable.ic_hand,
                 title = if (state.byReels) "That's your $reelLimit reels for today" else "That's your $budgetMinutes minutes for today",
                 body = if (state.unlocksLeft > 0) {
                     "$section is done until tomorrow. Feed, messages and profile still work. Really need more? Move first."

@@ -56,7 +56,7 @@ private fun LayoutCapture() {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 CardTitle("Report a missed screen", Ic.Eye)
-                Muted("Switch this on, open the screen Baskar missed (for example a reel from Explore), then come back here and share it.")
+                Muted("Switch this on, open the screen BasKar missed (for example a reel from Explore), then come back here and share it.")
             }
             Switch(checked = recording, onCheckedChange = { ReelsAccessibilityService.recordLayout.value = it })
         }
@@ -65,7 +65,7 @@ private fun LayoutCapture() {
         if (l != null) {
             Muted("Captured ${l.lineSequence().count() - 1} items from ${l.substringBefore(' ')}.")
             SecondaryButton("Copy layout", {
-                context.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText("Baskar layout", l))
+                context.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText("BasKar layout", l))
             })
             SecondaryButton("Share layout", {
                 val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, l)
@@ -78,7 +78,7 @@ private fun LayoutCapture() {
 @Composable
 fun DebugScreen(onBack: () -> Unit) {
     Screen("Detection check", onBack) {
-        Muted("If Baskar misses Reels or pauses the wrong screen, this shows what it saw.")
+        Muted("If BasKar misses Reels or pauses the wrong screen, this shows what it saw.")
         DetectionCheck()
         LayoutCapture()
     }

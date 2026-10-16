@@ -25,7 +25,7 @@
             android:background="@drawable/overlay_icon_bg"
             android:contentDescription="@null"
             android:padding="13dp"
-            android:src="@drawable/ic_sun"
+            android:src="@drawable/ic_hand"
             android:tint="@color/on_sun" />
 
         <TextView
