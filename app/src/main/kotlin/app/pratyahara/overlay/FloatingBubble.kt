@@ -31,15 +31,15 @@ class FloatingBubble(private val service: AccessibilityService, private val onTa
         val size = dp(48)
         if (y < 0) y = service.resources.displayMetrics.heightPixels / 3
         val bubble = ImageView(service).apply {
-            setImageResource(R.drawable.ic_lotus)
-            setColorFilter(service.getColor(R.color.lime))
+            setImageResource(R.drawable.ic_sun)
+            setColorFilter(service.getColor(R.color.sun))
             setPadding(dp(11), dp(11), dp(11), dp(11))
             background = GradientDrawable().apply {
                 shape = GradientDrawable.OVAL
                 setColor(Color.parseColor("#E6111111"))
             }
             elevation = dp(4).toFloat()
-            contentDescription = "Pratyahara: time left today"
+            contentDescription = "Baskar: time left today"
             alpha = 0.92f
         }
         val params = WindowManager.LayoutParams(

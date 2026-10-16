@@ -57,11 +57,13 @@ class Engine(val store: Store, val clock: Clock) {
                 nowMillis = clock.nowMillis(),
                 focusHours = d.focusHours(),
                 minuteOfDay = minuteOfDay(),
+                reelLimit = d.reelLimit,
+                reelsToday = usage.reels,
             )
         )
         // After a missed check-in, or during strict mode, squats can't buy time.
         if (state is LockState.BudgetLocked && (!TaskLoop.squatsAllowedToday(today, tasks) || strictActive(d))) {
-            state = LockState.BudgetLocked(unlocksLeft = 0)
+            state = state.copy(unlocksLeft = 0)
         }
         return state
     }
@@ -136,6 +138,15 @@ class Engine(val store: Store, val clock: Clock) {
                 (day.secondsByApp[it] ?: 0L) + (secondsByApp[it] ?: 0L)
             }
             d.copy(days = d.days + (key to day.copy(secondsByApp = merged)))
+        }
+    }
+
+    suspend fun addReels(count: Int) {
+        if (count <= 0) return
+        val key = today().toString()
+        store.update { d ->
+            val day = d.days[key] ?: DayUsage()
+            d.copy(days = d.days + (key to day.copy(reels = day.reels + count)))
         }
     }
 
@@ -232,6 +243,17 @@ class Engine(val store: Store, val clock: Clock) {
         }
     }
 
+    /** A lower reel limit applies now; a higher one, or none, waits 24 hours, and never during strict mode. */
+    suspend fun setReelLimit(limit: Int) {
+        val current = store.current.reelLimit
+        val tighter = limit > 0 && (current == 0 || limit < current)
+        if (tighter || limit == current) {
+            store.update { it.copy(reelLimit = limit, pending = it.pending.filterNot { p -> p.type == ChangeType.RAISE_REEL_LIMIT.name }) }
+        } else if (!strictActive()) {
+            scheduleProtection(ChangeType.RAISE_REEL_LIMIT, limit.toString())
+        }
+    }
+
     private suspend fun scheduleProtection(type: ChangeType, value: String) =
         schedule(PendingChange.create(UUID.randomUUID().toString(), type, value, stamp(), DelayTable.PROTECTION_DELAY))
 
@@ -260,6 +282,7 @@ class Engine(val store: Store, val clock: Clock) {
                     ChangeType.REMOVE_APP -> next.copy(monitored = next.monitored - c.value)
                     ChangeType.DISABLE_BLOCKING -> next.copy(blockingEnabled = false)
                     ChangeType.LOWER_SQUATS -> next.copy(squats = c.value.toInt())
+                    ChangeType.RAISE_REEL_LIMIT -> next.copy(reelLimit = c.value.toInt())
                 }
             }
             val dueIds = due.map { it.id }.toSet()

@@ -83,7 +83,7 @@ class BuddyChip(private val service: AccessibilityService) {
         chip.subtitle?.let { sub ->
             card.addView(TextView(service).apply {
                 text = if (chip.kind == Chip.Kind.QUOTE) "— $sub" else sub
-                setTextColor(Color.parseColor("#D4F76A"))
+                setTextColor(Color.parseColor("#FFB547"))
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
                 setPadding(0, dp(3), 0, 0)
             })

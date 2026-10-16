@@ -13,18 +13,18 @@ import androidx.compose.ui.unit.sp
 
 /** Accent colours shared with the overlay, which is drawn outside Compose (see res/values/colors.xml). */
 object Accent {
-    val Lime = Color(0xFFD4F76A)
-    val OnLime = Color(0xFF141A00)
+    val Sun = Color(0xFFFFB547)
+    val OnSun = Color(0xFF2B1600)
     val Violet = Color(0xFF7B61FF)
     val Coral = Color(0xFFFF7A59)
 }
 
-// Warm paper, ink-black pills and one loud lime. Calm by default, with a little bit of fun.
+// Warm paper, ink-black pills and one warm sun yellow. Calm by default, with a little bit of fun.
 private val Light = lightColorScheme(
     primary = Color(0xFF111111),
     onPrimary = Color.White,
-    primaryContainer = Accent.Lime,
-    onPrimaryContainer = Accent.OnLime,
+    primaryContainer = Accent.Sun,
+    onPrimaryContainer = Accent.OnSun,
     secondary = Accent.Violet,
     onSecondary = Color.White,
     secondaryContainer = Color(0xFFECE7FF),
@@ -48,10 +48,10 @@ private val Light = lightColorScheme(
 )
 
 private val Dark = darkColorScheme(
-    primary = Accent.Lime,
+    primary = Accent.Sun,
     onPrimary = Color(0xFF111111),
-    primaryContainer = Accent.Lime,
-    onPrimaryContainer = Accent.OnLime,
+    primaryContainer = Accent.Sun,
+    onPrimaryContainer = Accent.OnSun,
     secondary = Color(0xFFB5A4FF),
     onSecondary = Color(0xFF1C1150),
     secondaryContainer = Color(0xFF2A2350),

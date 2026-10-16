@@ -12,7 +12,8 @@ sealed interface LockState {
     /** Just unlocked: a short pause before Reels/Shorts can open. */
     data class Cooldown(val untilMillis: Long) : LockState
 
-    data class BudgetLocked(val unlocksLeft: Int) : LockState
+    /** Out of minutes, or out of reels when [byReels]. */
+    data class BudgetLocked(val unlocksLeft: Int, val byReels: Boolean = false) : LockState
 
     data class TaskLocked(val gate: TaskGate) : LockState
 

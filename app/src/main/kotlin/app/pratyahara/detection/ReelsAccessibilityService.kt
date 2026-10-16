@@ -17,6 +17,9 @@ import app.pratyahara.core.lock.MindfulGate
 import app.pratyahara.data.AppData
 import app.pratyahara.engine
 import app.pratyahara.overlay.BlockOverlay
+import app.pratyahara.overlay.BrainRotMeter
+import app.pratyahara.core.reels.ReelCounter
+import android.graphics.Rect
 import app.pratyahara.overlay.BuddyChip
 import app.pratyahara.overlay.FloatingBubble
 import app.pratyahara.overlay.PauseContent
@@ -48,6 +51,10 @@ class ReelsAccessibilityService : AccessibilityService() {
     private lateinit var chip: BuddyChip
     private lateinit var pause: PauseOverlay
     private lateinit var bubble: FloatingBubble
+    private lateinit var meter: BrainRotMeter
+    private val reelCounter = ReelCounter()
+    private var unflushedReels = 0
+    private val scrollRect = Rect()
     private var buddy = Buddy()
     private var buddyEvery = -1
     private var gate = MindfulGate()
@@ -68,6 +75,7 @@ class ReelsAccessibilityService : AccessibilityService() {
         chip = BuddyChip(this)
         pause = PauseOverlay(this, onContinue = ::pauseContinue, onLeave = ::goBack)
         bubble = FloatingBubble(this, onTap = ::showStatusChip)
+        meter = BrainRotMeter(this)
 
         scope.launch {
             engine.store.data.map { it.monitored }.distinctUntilChanged().collect { applyPackageFilter(it) }
@@ -92,6 +100,7 @@ class ReelsAccessibilityService : AccessibilityService() {
         val pkg = event?.packageName?.toString() ?: return
         if (pkg !in engine.store.current.monitored) return
         updateBubble(pkg)
+        if (event.eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED) onReelScroll(event)
         val now = System.currentTimeMillis()
         if (now - lastEvalAt >= THROTTLE_MS) {
             evaluate()
@@ -132,14 +141,19 @@ class ReelsAccessibilityService : AccessibilityService() {
         }
         val previous = visiblePackage
         visiblePackage = pkg
-        refreshOverlay()
         val now = System.currentTimeMillis()
+        if (pkg != null && previous == null) {
+            reelCounter.onEnter(now)
+            countReel()
+        }
+        refreshOverlay()
         if (pkg != null && previous == null) onReelsOpened(now)
         if (pkg == null && previous != null) {
             buddy.onLeave(now)
             gate.onLeave(now)
             pause.hide()
         }
+        updateMeter(bump = false)
     }
 
     private fun onReelsOpened(now: Long) {
@@ -155,6 +169,7 @@ class ReelsAccessibilityService : AccessibilityService() {
                 val left = (state.remainingSeconds + 59) / 60
                 val section = sectionName()
                 chip.hide()
+                meter.hide()
                 pause.show(
                     PauseContent(
                         title = "Take a breath",
@@ -196,6 +211,7 @@ class ReelsAccessibilityService : AccessibilityService() {
         val state = engine.lockState(data) as? LockState.Allowed ?: return
         val section = sectionName()
         chip.hide()
+        meter.hide()
         pause.show(
             PauseContent(
                 title = "${gate.minutesSinceOpened(now)} minutes of $section",
@@ -207,6 +223,46 @@ class ReelsAccessibilityService : AccessibilityService() {
         visitsAtPause = data.day(engine.today()).visits
         // Counts from now, whatever the user picks.
         gate.onOpened(now)
+    }
+
+    private fun reelsToday(): Int = engine.store.current.day(engine.today()).reels + unflushedReels
+
+    /** The brain meter shows only while Reels/Shorts plays, never over a pause or block screen. */
+    private fun updateMeter(bump: Boolean) {
+        val want = visiblePackage != null && engine.store.current.brainMeterEnabled && !overlay.isShowing && !pause.isShowing &&
+            getSystemService(PowerManager::class.java).isInteractive
+        when {
+            !want -> meter.hide()
+            meter.isShowing && bump -> meter.bump(reelsToday())
+            else -> meter.show(reelsToday())
+        }
+    }
+
+    /** A scroll in the full-screen player while Reels/Shorts is open may be the next reel. */
+    private fun onReelScroll(event: AccessibilityEvent) {
+        if (visiblePackage != event.packageName?.toString() || overlay.isShowing || pause.isShowing) return
+        // Ignore smaller scrollables on top of the player, like the comments sheet.
+        event.source?.let { src ->
+            src.getBoundsInScreen(scrollRect)
+            if (scrollRect.height() < resources.displayMetrics.heightPixels * 0.6) return
+        }
+        if (reelCounter.onScroll(event.fromIndex, System.currentTimeMillis())) {
+            countReel()
+            updateMeter(bump = true)
+        }
+    }
+
+    /** Saved right away, so a reel limit applies on the very next reel. */
+    private fun countReel() {
+        unflushedReels++
+        scope.launch {
+            val n = unflushedReels
+            if (n <= 0) return@launch
+            engine.addReels(n)
+            unflushedReels -= n
+            // The reel limit may have just been reached.
+            refreshOverlay()
+        }
     }
 
     private fun sectionName(): String = visiblePackage?.let { detector.ruleFor(it)?.sectionName } ?: "Reels"
@@ -259,7 +315,7 @@ class ReelsAccessibilityService : AccessibilityService() {
             LockState.Disabled -> "Blocking is off"
         }
         chip.show(
-            Chip(Chip.Kind.HELLO, line, "Opened ${usage.visits} times · paused ${usage.blocks} times · tap for more"),
+            Chip(Chip.Kind.HELLO, line, "${reelsToday()} reels today · brain ${app.pratyahara.core.reels.BrainState.health(reelsToday())}% · tap for more"),
             durationMs = 5_000,
             onTap = { openApp("home") },
         )
@@ -280,11 +336,12 @@ class ReelsAccessibilityService : AccessibilityService() {
             return
         }
         val rule = detector.ruleFor(pkg)
-        val content = OverlayCopy.forState(state, data.budgetMinutes, rule?.sectionName ?: "Reels", data.squats, now) ?: return
+        val content = OverlayCopy.forState(state, data.budgetMinutes, rule?.sectionName ?: "Reels", data.squats, now, data.reelLimit) ?: return
         if (!overlay.isShowing) scope.launch { engine.recordBlock() }
         chip.hide()
         pause.hide()
         bubble.hide()
+        meter.hide()
         overlay.show(content)
     }
 
@@ -329,6 +386,7 @@ class ReelsAccessibilityService : AccessibilityService() {
             }
             updateBubble(foreground)
             refreshOverlay()
+            updateMeter(bump = false)
             if (ticks % FLUSH_EVERY_S == 0 || (pkg == null && unflushedSeconds.isNotEmpty())) flush()
             if (ticks % 60 == 0) engine.applyDuePending()
         }
@@ -349,6 +407,7 @@ class ReelsAccessibilityService : AccessibilityService() {
         if (::chip.isInitialized) chip.hide()
         if (::pause.isInitialized) pause.hide()
         if (::bubble.isInitialized) bubble.hide()
+        if (::meter.isInitialized) meter.hide()
         val batch = HashMap(unflushedSeconds)
         // Best effort: the process may be going away.
         (applicationContext as app.pratyahara.PratyaharaApp).appScope.launch { engine.addUsage(batch) }

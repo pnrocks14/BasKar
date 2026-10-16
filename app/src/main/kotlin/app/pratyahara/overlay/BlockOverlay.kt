@@ -27,19 +27,21 @@ data class OverlayContent(
 )
 
 object OverlayCopy {
-    fun forState(state: LockState, budgetMinutes: Int, section: String, squats: Int, nowMillis: Long): OverlayContent? {
+    fun forState(state: LockState, budgetMinutes: Int, section: String, squats: Int, nowMillis: Long, reelLimit: Int = 0): OverlayContent? {
         // A new quote every few minutes, the same one while it's on screen.
         val quote = Quotes.pick(nowMillis / (5 * 60_000))
         return when (state) {
             is LockState.BudgetLocked -> OverlayContent(
-                icon = R.drawable.ic_lotus,
-                title = "That's your $budgetMinutes minutes for today",
+                icon = R.drawable.ic_sun,
+                title = if (state.byReels) "That's your $reelLimit reels for today" else "That's your $budgetMinutes minutes for today",
                 body = if (state.unlocksLeft > 0) {
-                    "$section is done until tomorrow. Your feed, messages and profile still work. If something really can't wait, earn ${UnlockRules.UNLOCK_MINUTES} more minutes by moving first."
+                    "$section is done until tomorrow. Feed, messages and profile still work. Really need more? Move first."
                 } else {
-                    "$section is done until tomorrow. Your feed, messages and profile still work. Go do something your future self will thank you for."
+                    "$section is done until tomorrow. Feed, messages and profile still work. Go do something real."
                 },
-                primaryLabel = if (state.unlocksLeft > 0) "Earn ${UnlockRules.UNLOCK_MINUTES} min with $squats squats" else null,
+                primaryLabel = if (state.unlocksLeft > 0) {
+                    if (state.byReels) "Earn ${UnlockRules.UNLOCK_REELS} reels with $squats squats" else "Earn ${UnlockRules.UNLOCK_MINUTES} min with $squats squats"
+                } else null,
                 primaryRoute = if (state.unlocksLeft > 0) "unlock" else null,
                 quote = quote,
             )

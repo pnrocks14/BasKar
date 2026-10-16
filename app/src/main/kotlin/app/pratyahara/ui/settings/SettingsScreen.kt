@@ -104,6 +104,22 @@ fun SettingsScreen(onBack: () -> Unit, go: (String) -> Unit) {
             }
         }
 
+        SoftCard {
+            CardTitle("Reel limit", Ic.Brain)
+            Muted("Close Reels after a number of reels, even with minutes left. Lowering is instant, raising waits 24 hours.")
+            Choices(UnlockRules.REEL_LIMITS.map { it to if (it == 0) "Off" else "$it reels" }, data.reelLimit) { v ->
+                scope.launch { engine.setReelLimit(v) }
+            }
+            if (waiting(ChangeType.RAISE_REEL_LIMIT)) Muted("Changing in 24 hours unless you cancel.")
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("Brain-rot meter", style = MaterialTheme.typography.titleMedium)
+                    Muted("A little brain in the corner of Reels that counts every reel and slowly rots.")
+                }
+                Switch(checked = data.brainMeterEnabled, onCheckedChange = { on -> scope.launch { engine.updateSettings { it.copy(brainMeterEnabled = on) } } })
+            }
+        }
+
         FocusCard()
 
         SoftCard {
@@ -126,11 +142,11 @@ fun SettingsScreen(onBack: () -> Unit, go: (String) -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     CardTitle("Floating button", Ic.Lotus)
-                    Muted("A small Pratyahara button on the edge of the screen, only inside the apps you limit. Tap it to see your time left. Drag it up or down.")
+                    Muted("A small Baskar button on the edge of the screen, only inside the apps you limit. Tap it to see your time left. Drag it up or down.")
                 }
                 Switch(checked = data.bubbleEnabled, onCheckedChange = { on -> scope.launch { engine.updateSettings { it.copy(bubbleEnabled = on) } } })
             }
-            Muted("If you also see Android's accessibility shortcut everywhere, turn it off in Accessibility, Pratyahara, \"Pratyahara shortcut\".")
+            Muted("If you also see Android's accessibility shortcut everywhere, turn it off in Accessibility, Baskar, \"Baskar shortcut\".")
         }
 
         SoftCard {
@@ -159,7 +175,7 @@ fun SettingsScreen(onBack: () -> Unit, go: (String) -> Unit) {
 
         SoftCard {
             CardTitle("About", Icons.Rounded.Info)
-            Muted("Tip: add the Pratyahara widget to your home screen to see your minutes left at a glance.")
+            Muted("Tip: add the Baskar widget to your home screen to see your minutes left at a glance.")
             SecondaryButton("Detection check", { go(Routes.DEBUG) })
             SecondaryButton("Privacy policy", { go(Routes.PRIVACY) })
         }

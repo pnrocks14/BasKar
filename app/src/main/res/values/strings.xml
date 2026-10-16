@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Pratyahara</string>
-    <string name="accessibility_service_label">Pratyahara</string>
+    <string name="app_name">Baskar</string>
+    <string name="accessibility_service_label">Baskar</string>
     <string name="accessibility_service_summary">Pauses Reels and Shorts in the apps you chose. Nothing leaves your phone.</string>
-    <string name="accessibility_service_description">Pratyahara uses this permission to notice when the Reels or Shorts screen is open in the apps you picked (for example Instagram or YouTube), so it can count that time and pause it when your daily limit is reached. It only looks at those apps, never reads your messages, and stores nothing except minute and block counts. Nothing is sent off your phone; the app has no internet access.</string>
+    <string name="accessibility_service_description">Baskar uses this permission to notice when the Reels or Shorts screen is open in the apps you picked (for example Instagram or YouTube), so it can count that time and pause it when your daily limit is reached. It only looks at those apps, never reads your messages, and stores nothing except minute and block counts. Nothing is sent off your phone; the app has no internet access.</string>
 
     <string name="overlay_back">Back to the feed</string>
 

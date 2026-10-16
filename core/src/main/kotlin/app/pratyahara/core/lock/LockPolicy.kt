@@ -13,12 +13,18 @@ data class LockInputs(
     val focusHours: FocusHours? = null,
     /** Local time as minutes since midnight, for [focusHours]. */
     val minuteOfDay: Int = 0,
+    /** Reels a day before they close too, whatever minutes are left; 0 means no reel limit. */
+    val reelLimit: Int = 0,
+    val reelsToday: Int = 0,
 )
 
 object UnlockRules {
     const val UNLOCK_MINUTES = 5
     const val MAX_UNLOCKS_PER_DAY = 2
     const val COOLDOWN_SECONDS = 10
+    /** Reels each squat pass adds on top of a reel limit. */
+    const val UNLOCK_REELS = 10
+    val REEL_LIMITS = listOf(0, 30, 50, 100)
     const val DEFAULT_SQUATS = 20
     const val MIN_SQUATS = 10
     const val MAX_SQUATS = 50
@@ -35,8 +41,12 @@ object LockPolicy {
 
         val allowance = i.budgetMinutes * 60L + i.unlocksUsedToday * UnlockRules.UNLOCK_MINUTES * 60L
         val remaining = allowance - i.usedSecondsToday
-        if (remaining > 0) return LockState.Allowed(remaining)
-        return LockState.BudgetLocked(unlocksLeft = (UnlockRules.MAX_UNLOCKS_PER_DAY - i.unlocksUsedToday).coerceAtLeast(0))
+        val unlocksLeft = (UnlockRules.MAX_UNLOCKS_PER_DAY - i.unlocksUsedToday).coerceAtLeast(0)
+        if (remaining <= 0) return LockState.BudgetLocked(unlocksLeft)
+        if (i.reelLimit > 0 && i.reelsToday >= i.reelLimit + i.unlocksUsedToday * UnlockRules.UNLOCK_REELS) {
+            return LockState.BudgetLocked(unlocksLeft, byReels = true)
+        }
+        return LockState.Allowed(remaining)
     }
 
     /** Squats can only buy time when the budget is the reason for the lock. */

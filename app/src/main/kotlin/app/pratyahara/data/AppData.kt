@@ -60,6 +60,10 @@ data class AppData(
     val strictUntil: Long = 0,
     /** ISO day the weekly report was last sent. */
     val lastWeeklyReport: String? = null,
+    /** The brain-rot meter with the reel count, shown only while Reels or Shorts plays. */
+    val brainMeterEnabled: Boolean = true,
+    /** Reels a day before Reels/Shorts close; 0 means only the minute limit counts. */
+    val reelLimit: Int = 0,
 ) {
     fun day(day: LocalDate): DayUsage = days[day.toString()] ?: DayUsage()
     fun taskModels(): List<DayTask> = tasks.map { it.toModel() }
@@ -74,6 +78,8 @@ data class DayUsage(
     val unlocks: Int = 0,
     /** How many times Reels/Shorts was opened. */
     val visits: Int = 0,
+    /** Reels or Shorts swiped past. */
+    val reels: Int = 0,
 ) {
     val totalSeconds: Long get() = secondsByApp.values.sum()
 }
