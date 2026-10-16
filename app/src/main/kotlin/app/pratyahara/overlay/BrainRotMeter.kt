@@ -1,29 +1,26 @@
 package app.pratyahara.overlay
 
 import android.accessibilityservice.AccessibilityService
-import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.Path
 import android.graphics.PixelFormat
 import android.graphics.RectF
 import android.graphics.Typeface
 import android.util.TypedValue
+import android.view.Choreographer
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
-import android.view.animation.LinearInterpolator
 import androidx.core.graphics.ColorUtils
 import app.pratyahara.core.reels.BrainState
-import kotlin.math.PI
-import kotlin.math.sin
+import kotlin.math.exp
 
 /**
- * A small animated brain in the top corner while Reels or Shorts plays, with the day's reel count.
- * Each reel makes it pop, and the brain slowly turns from pink to swampy green, then starts to drip.
+ * A small pill at the top centre while Reels or Shorts plays: the brain with its face, and today's reel count.
+ * Each reel makes the brain squish and the count tick up; the brain slowly rots as the count grows.
  * It never takes touches, so it can't get in the way.
  */
 class BrainRotMeter(private val service: AccessibilityService) {
@@ -32,22 +29,28 @@ class BrainRotMeter(private val service: AccessibilityService) {
 
     val isShowing: Boolean get() = view != null
 
+    /** Height of the pill plus its top margin, so other chips can sit below it. */
+    val bottomPx: Int get() = dp(service, TOP_DP + 8) + (view?.height ?: dp(service, 44))
+
     fun show(reelsToday: Int) {
         view?.let { it.setReels(reelsToday, pop = false); return }
-        val v = MeterView(service).apply { setReels(reelsToday, pop = false) }
+        val v = MeterView(service).apply { setReels(reelsToday, pop = false, snap = true) }
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
-                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
             PixelFormat.TRANSLUCENT,
         ).apply {
-            gravity = Gravity.TOP or Gravity.START
-            x = dp(service, 12)
-            y = dp(service, 44)
+            gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+            y = dp(service, TOP_DP)
         }
         runCatching { wm.addView(v, params) }.onFailure { return }
         view = v
+        v.alpha = 0f
+        v.scaleX = 0.8f
+        v.scaleY = 0.8f
+        v.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(260).start()
         v.start()
     }
 
@@ -65,124 +68,119 @@ class BrainRotMeter(private val service: AccessibilityService) {
     }
 
     @SuppressLint("ViewConstructor")
-    private class MeterView(context: Context) : View(context) {
+    private class MeterView(context: Context) : View(context), Choreographer.FrameCallback {
+        private val painter = BrainPainter()
         private var reels = 0
-        private var t = 0f
-        private var popStart = -1L
-        private val ticker = ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = 2_400
-            repeatCount = ValueAnimator.INFINITE
-            interpolator = LinearInterpolator()
-            addUpdateListener { t = it.animatedValue as Float; invalidate() }
-        }
+        private var shownHealth = 1f
+        private var targetHealth = 1f
+        private var shownCount = 0f
+        private var popAt = -1L
+        private var lastFrame = 0L
+        private var running = false
 
         private val bg = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#E6111111") }
-        private val brain = Paint(Paint.ANTI_ALIAS_FLAG)
-        private val folds = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
-            strokeCap = Paint.Cap.ROUND
-            strokeWidth = dp(context, 2).toFloat()
-        }
-        private val title = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        private val ring = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = dp(context, 1.5f) }
+        private val count = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
-            textSize = sp(context, 17f)
+            textSize = sp(context, 20f)
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         }
-        private val sub = Paint(Paint.ANTI_ALIAS_FLAG).apply { textSize = sp(context, 12.5f) }
         private val plus = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            textSize = sp(context, 15f)
+            textSize = sp(context, 13f)
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         }
-        private val brainBox = dp(context, 44).toFloat()
-        private val pad = dp(context, 10).toFloat()
+        private val brainBox = dp(context, 34f)
+        private val padV = dp(context, 5f)
+        private val padH = dp(context, 8f)
+        private val gap = dp(context, 6f)
+        private val rect = RectF()
 
-        fun setReels(n: Int, pop: Boolean) {
-            reels = n
-            if (pop) popStart = System.currentTimeMillis()
-            contentDescription = "Reel $n today"
-            requestLayout()
-            invalidate()
+        init {
+            setLayerType(LAYER_TYPE_HARDWARE, null)
         }
 
-        fun start() = ticker.start()
-        fun stop() = ticker.cancel()
+        fun setReels(n: Int, pop: Boolean, snap: Boolean = false) {
+            val widthChanged = digits(n) != digits(reels)
+            reels = n
+            targetHealth = BrainState.health(n) / 100f
+            if (snap) {
+                shownHealth = targetHealth
+                shownCount = n.toFloat()
+            }
+            if (pop) popAt = System.currentTimeMillis()
+            contentDescription = "Reel $n today, brain ${BrainState.health(n)}%"
+            if (widthChanged) requestLayout()
+        }
 
-        private fun line1() = "Reel $reels"
-        private fun line2() = "Brain ${BrainState.health(reels)}% · ${BrainState.of(reels).label}"
+        fun start() {
+            if (running) return
+            running = true
+            lastFrame = 0L
+            Choreographer.getInstance().postFrameCallback(this)
+        }
+
+        fun stop() {
+            running = false
+            Choreographer.getInstance().removeFrameCallback(this)
+        }
+
+        override fun doFrame(frameTimeNanos: Long) {
+            if (!running) return
+            val now = frameTimeNanos / 1_000_000
+            val dt = if (lastFrame == 0L) 16f else (now - lastFrame).coerceIn(1, 100).toFloat()
+            lastFrame = now
+            // Ease the colour and the number towards their new values instead of jumping.
+            val k = 1f - exp(-dt / 260f)
+            shownHealth += (targetHealth - shownHealth) * k
+            shownCount += (reels - shownCount) * (1f - exp(-dt / 120f))
+            invalidate()
+            Choreographer.getInstance().postFrameCallback(this)
+        }
+
+        private fun digits(n: Int) = n.toString().length
 
         override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-            val text = maxOf(title.measureText(line1()), sub.measureText(line2()))
-            setMeasuredDimension((pad * 3 + brainBox + text + pad).toInt(), (brainBox + pad * 2).toInt())
+            val textW = count.measureText("0".repeat(digits(reels).coerceAtLeast(2)))
+            setMeasuredDimension((padH * 2 + brainBox + gap + textW + padH * 0.5f).toInt(), (brainBox + padV * 2).toInt())
         }
 
         override fun onDraw(canvas: Canvas) {
             val w = width.toFloat()
             val h = height.toFloat()
-            canvas.drawRoundRect(RectF(0f, 0f, w, h), h / 2, h / 2, bg)
+            val color = BrainPainter.colorFor(shownHealth)
+            rect.set(0f, 0f, w, h)
+            canvas.drawRoundRect(rect, h / 2, h / 2, bg)
+            ring.color = ColorUtils.setAlphaComponent(color, 110)
+            rect.inset(ring.strokeWidth / 2, ring.strokeWidth / 2)
+            canvas.drawRoundRect(rect, h / 2, h / 2, ring)
 
-            // Healthy pink, then swamp green, then a rotten olive.
-            val health = BrainState.health(reels) / 100f
-            val color = if (health > 0.5f) {
-                ColorUtils.blendARGB(Color.parseColor("#9BC53D"), Color.parseColor("#F4A7C3"), (health - 0.5f) * 2)
-            } else {
-                ColorUtils.blendARGB(Color.parseColor("#6B6B2A"), Color.parseColor("#9BC53D"), health * 2)
-            }
-            brain.color = color
-            folds.color = ColorUtils.blendARGB(color, Color.BLACK, 0.35f)
-            sub.color = color
-
-            // A gentle wobble that gets sloppier as the brain rots, and a pop on every new reel.
-            val sinceePop = System.currentTimeMillis() - popStart
-            val popScale = if (popStart > 0 && sinceePop < 420) 1f + 0.28f * sin(PI * sinceePop / 420.0).toFloat() else 1f
-            val wobble = (3f + (1f - health) * 9f) * sin(2 * PI * t).toFloat()
-            val cx = pad * 1.5f + brainBox / 2
+            val now = System.currentTimeMillis()
+            val sincePop = if (popAt > 0) now - popAt else -1
+            val cx = padH + brainBox / 2
             val cy = h / 2
             canvas.save()
-            canvas.translate(cx, cy)
-            canvas.rotate(wobble)
-            canvas.scale(popScale, popScale)
-            drawBrain(canvas, brainBox / 2, health)
+            canvas.translate(cx, cy + brainBox * 0.04f)
+            painter.draw(canvas, brainBox * 0.44f, shownHealth, now, sincePop)
             canvas.restore()
 
-            if (popStart > 0 && sinceePop < 700) {
-                val f = sinceePop / 700f
+            // The number rolls up smoothly to the new count.
+            val shown = kotlin.math.round(shownCount).toInt()
+            val tx = padH + brainBox + gap
+            val ty = cy - (count.descent() + count.ascent()) / 2
+            canvas.drawText(shown.toString(), tx, ty, count)
+
+            if (sincePop in 0..800) {
+                val f = sincePop / 800f
                 plus.color = ColorUtils.setAlphaComponent(color, (255 * (1 - f)).toInt())
-                canvas.drawText("+1", cx + brainBox / 3, cy - brainBox / 4 - f * pad * 2, plus)
-            }
-
-            val tx = pad * 2.5f + brainBox
-            canvas.drawText(line1(), tx, cy - dp(context, 2), title)
-            canvas.drawText(line2(), tx, cy + sub.textSize + dp(context, 1), sub)
-        }
-
-        /** Two lobes with a few folds, centred on the origin. Drips start once it's melting. */
-        private fun drawBrain(c: Canvas, r: Float, health: Float) {
-            val lobe = r * 0.62f
-            c.drawOval(RectF(-r * 0.95f, -lobe, r * 0.05f, lobe), brain)
-            c.drawOval(RectF(-r * 0.05f, -lobe, r * 0.95f, lobe), brain)
-            c.drawOval(RectF(-r * 0.6f, -r * 0.8f, r * 0.6f, r * 0.1f), brain)
-            val p = Path()
-            p.moveTo(0f, -r * 0.7f); p.cubicTo(-r * 0.12f, -r * 0.3f, r * 0.12f, r * 0.1f, 0f, r * 0.55f)
-            p.moveTo(-r * 0.7f, -r * 0.15f); p.cubicTo(-r * 0.5f, -r * 0.45f, -r * 0.3f, -r * 0.05f, -r * 0.15f, -r * 0.35f)
-            p.moveTo(-r * 0.65f, r * 0.3f); p.cubicTo(-r * 0.45f, r * 0.05f, -r * 0.3f, r * 0.45f, -r * 0.12f, r * 0.2f)
-            p.moveTo(r * 0.7f, -r * 0.15f); p.cubicTo(r * 0.5f, -r * 0.45f, r * 0.3f, -r * 0.05f, r * 0.15f, -r * 0.35f)
-            p.moveTo(r * 0.65f, r * 0.3f); p.cubicTo(r * 0.45f, r * 0.05f, r * 0.3f, r * 0.45f, r * 0.12f, r * 0.2f)
-            c.drawPath(p, folds)
-            if (health < 0.6f) {
-                // Up to three drips, each sliding down and starting over.
-                val drips = if (health < 0.25f) 3 else if (health < 0.45f) 2 else 1
-                for (i in 0 until drips) {
-                    val phase = (t + i / 3f) % 1f
-                    val x = -r * 0.45f + i * r * 0.45f
-                    val y = lobe * 0.8f + phase * r * 0.55f
-                    c.drawCircle(x, y, r * 0.11f * (1 - phase * 0.4f), brain)
-                }
+                canvas.drawText("+1", cx + brainBox * 0.25f, cy - brainBox * 0.12f - f * padV * 2, plus)
             }
         }
     }
 
     private companion object {
+        const val TOP_DP = 40
         fun dp(c: Context, v: Int) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v.toFloat(), c.resources.displayMetrics).toInt()
+        fun dp(c: Context, v: Float) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v, c.resources.displayMetrics)
         fun sp(c: Context, v: Float) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, v, c.resources.displayMetrics)
     }
 }
