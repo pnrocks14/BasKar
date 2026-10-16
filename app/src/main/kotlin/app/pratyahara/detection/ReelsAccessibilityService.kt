@@ -8,6 +8,7 @@ import android.view.accessibility.AccessibilityEvent
 import app.pratyahara.MainActivity
 import app.pratyahara.core.buddy.Buddy
 import app.pratyahara.core.buddy.Chip
+import app.pratyahara.core.buddy.Quotes
 import app.pratyahara.core.detection.Debouncer
 import app.pratyahara.core.detection.DetectionEngine
 import app.pratyahara.core.detection.DetectionResult
@@ -20,6 +21,7 @@ import app.pratyahara.overlay.BlockOverlay
 import app.pratyahara.overlay.BrainRotMeter
 import app.pratyahara.core.reels.ReelCounter
 import android.graphics.Rect
+import app.pratyahara.overlay.BubbleInfo
 import app.pratyahara.overlay.BuddyChip
 import app.pratyahara.overlay.FloatingBubble
 import app.pratyahara.overlay.PauseContent
@@ -52,6 +54,8 @@ class ReelsAccessibilityService : AccessibilityService() {
     private lateinit var pause: PauseOverlay
     private lateinit var bubble: FloatingBubble
     private lateinit var meter: BrainRotMeter
+    /** The latest quote the buddy showed, for the BasKar button. */
+    private var lastQuote: String? = null
     private val reelCounter = ReelCounter()
     private var unflushedReels = 0
     private val scrollRect = Rect()
@@ -72,9 +76,9 @@ class ReelsAccessibilityService : AccessibilityService() {
         super.onServiceConnected()
         running.value = true
         overlay = BlockOverlay(this, onBack = ::goBack, onOpenRoute = ::openApp)
-        chip = BuddyChip(this)
+        chip = BuddyChip(this, below = { if (::meter.isInitialized && meter.isShowing) meter.bottomPx else 0 })
         pause = PauseOverlay(this, onContinue = ::pauseContinue, onLeave = ::goBack)
-        bubble = FloatingBubble(this, onTap = ::showStatusChip)
+        bubble = FloatingBubble(this, info = ::bubbleInfo, onOpenApp = { openApp("home") })
         meter = BrainRotMeter(this)
 
         scope.launch {
@@ -300,25 +304,33 @@ class ReelsAccessibilityService : AccessibilityService() {
         val state = engine.lockState(data) as? LockState.Allowed ?: return
         syncBuddy(data.quoteEveryMinutes)
         val left = state.remainingSeconds - (unflushedSeconds[pkg] ?: 0L)
-        buddy.onSecond(engine.today().toString(), left)?.let { if (!overlay.isShowing && !pause.isShowing) chip.show(it) }
+        buddy.onSecond(engine.today().toString(), left)?.let {
+            if (it.kind == Chip.Kind.QUOTE) lastQuote = it.title
+            if (!overlay.isShowing && !pause.isShowing) chip.show(it)
+        }
     }
 
-    private fun showStatusChip() {
+    /** What the BasKar button's pills show: a live countdown, today's opens and the latest quote. */
+    private fun bubbleInfo(): BubbleInfo {
         val data = engine.store.current
         val usage = data.day(engine.today())
-        val line = when (val state = engine.lockState(data)) {
-            is LockState.Allowed -> "${minutes((state.remainingSeconds + 59) / 60)} of Reels left today"
-            is LockState.BudgetLocked -> "Reels are done for today"
-            is LockState.TaskLocked -> "Reels are waiting on your task"
-            is LockState.Cooldown -> "Reels open in a few seconds"
-            is LockState.FocusLocked -> "Focus hours until ${FocusHours.format(state.endMinute)}"
+        val countdown = when (val state = engine.lockState(data)) {
+            is LockState.Allowed -> {
+                val left = (state.remainingSeconds - unflushedSeconds.values.sum()).coerceAtLeast(0L)
+                val h = left / 3600
+                val m = (left % 3600) / 60
+                val sec = left % 60
+                (if (h > 0) "%d:%02d:%02d".format(h, m, sec) else "%d:%02d".format(m, sec)) + " left"
+            }
+            is LockState.BudgetLocked -> if (state.byReels) "Reel limit reached" else "Done for today"
+            is LockState.TaskLocked -> "Waiting on your task"
+            is LockState.Cooldown -> "Opening in a moment"
+            is LockState.FocusLocked -> "Focus until ${FocusHours.format(state.endMinute)}"
             LockState.Disabled -> "Blocking is off"
         }
-        chip.show(
-            Chip(Chip.Kind.HELLO, line, "${reelsToday()} reels today · brain ${app.pratyahara.core.reels.BrainState.health(reelsToday())}% · tap for more"),
-            durationMs = 5_000,
-            onTap = { openApp("home") },
-        )
+        val opened = if (usage.visits == 1) "Opened once today" else "Opened ${usage.visits} times today"
+        val quote = lastQuote ?: Quotes.ofDay(engine.today().toEpochDay()).text
+        return BubbleInfo(countdown, opened, quote)
     }
 
     private fun refreshOverlay() {

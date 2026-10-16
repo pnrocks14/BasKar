@@ -19,7 +19,11 @@ import app.pratyahara.core.buddy.Chip
  * The little message that slides in at the top while you scroll (a hello, a quote, a heads-up).
  * Drawn as an accessibility overlay. It ignores touches unless it has an [onTap], so scrolling carries on underneath.
  */
-class BuddyChip(private val service: AccessibilityService) {
+class BuddyChip(
+    private val service: AccessibilityService,
+    /** Space taken at the top by the brain meter, so the chip sits under it instead of on top. */
+    private val below: () -> Int = { 0 },
+) {
     private val wm = service.getSystemService(WindowManager::class.java)
     private val handler = Handler(Looper.getMainLooper())
     private var view: View? = null
@@ -42,7 +46,7 @@ class BuddyChip(private val service: AccessibilityService) {
             PixelFormat.TRANSLUCENT,
         ).apply {
             gravity = Gravity.TOP
-            y = dp(44)
+            y = maxOf(dp(44), below())
         }
         runCatching { wm.addView(v, params) }.onFailure { return }
         view = v
