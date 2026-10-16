@@ -1,8 +1,8 @@
-# Pratyahara
+# BasKar
 
-**Pause the scroll.** An Android app that limits only the Reels / Shorts part of Instagram, YouTube and TikTok, with friction that is firm in the moment and flexible after a pause.
+**Stop the scroll.** An Android app that limits only the Reels / Shorts part of Instagram, YouTube and TikTok, with friction that is firm in the moment and flexible after a pause.
 
-Pratyahara (प्रत्याहार) is the fifth limb of yoga in Patanjali's Yoga Sutras (2.54): drawing the senses back from the objects that pull at them.
+BasKar (बस कर) is Hindi for "enough, stop it". The code still uses its first name, Pratyahara, in package and class names.
 
 - **Scoped blocking.** Only Reels/Shorts pause. Feed, messages, profile and business tools stay open.
 - **Daily budget.** 30 minutes by default, counted only while Reels/Shorts is on screen. Lowering is instant; raising needs a written reason and waits 4 hours to 3 days depending on the size of the jump.

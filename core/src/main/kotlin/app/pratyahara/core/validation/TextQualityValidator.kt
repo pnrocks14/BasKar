@@ -14,7 +14,7 @@ data class TextRules(
 
 /**
  * Rule-based, on-device check that a piece of writing is a real attempt, not filler.
- * No AI: length, sentence and word counts, repeated characters, keyboard mashing and a
+ * Plain rules only: length, sentence and word counts, repeated characters, keyboard mashing and a
  * small list of lazy phrases.
  */
 class TextQualityValidator(private val rules: TextRules) {

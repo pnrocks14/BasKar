@@ -114,7 +114,7 @@ fun HomeScreen(go: (String) -> Unit) {
 
         if (serviceOn && systemShortcut && !data.shortcutTipDismissed) {
             SoftCard(container = MaterialTheme.colorScheme.secondaryContainer) {
-                CardTitle("You can remove Android's button", Ic.Lotus, MaterialTheme.colorScheme.onSecondaryContainer)
+                CardTitle("You can remove Android's button", Ic.Hand, MaterialTheme.colorScheme.onSecondaryContainer)
                 Text(
                     "Android's accessibility button for BasKar is still switched on. You don't need it: BasKar's own " +
                         "dark button shows up inside Instagram, YouTube and this app.",

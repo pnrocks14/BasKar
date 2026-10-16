@@ -141,7 +141,7 @@ fun SettingsScreen(onBack: () -> Unit, go: (String) -> Unit) {
         SoftCard {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    CardTitle("Floating button", Ic.Lotus)
+                    CardTitle("Floating button", Ic.Hand)
                     Muted("A small BasKar button on the edge of the screen, only inside the apps you limit. Tap it to see your time left. Drag it up or down.")
                 }
                 Switch(checked = data.bubbleEnabled, onCheckedChange = { on -> scope.launch { engine.updateSettings { it.copy(bubbleEnabled = on) } } })
