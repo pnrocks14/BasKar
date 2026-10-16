@@ -115,6 +115,7 @@ class BrainPainter {
             for (side in listOf(-1f, 1f)) {
                 c.save()
                 c.translate(side * eyeX, eyeY)
+                c.drawCircle(0f, 0f, eyeR * 1.05f, eyeWhite)
                 c.rotate(s * 240f * side)
                 path.reset()
                 for (k in 0..24) {
