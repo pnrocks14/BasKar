@@ -77,6 +77,9 @@ class BrainRotMeter(private val service: AccessibilityService) {
         private var popAt = -1L
         private var lastFrame = 0L
         private var running = false
+        /** The current frame's time, so every frame advances by exactly one vsync. */
+        private var frameMs = 0L
+        private var plusText = "+1"
 
         private val bg = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#E6111111") }
         private val ring = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = dp(context, 1.5f) }
@@ -101,13 +104,14 @@ class BrainRotMeter(private val service: AccessibilityService) {
 
         fun setReels(n: Int, pop: Boolean, snap: Boolean = false) {
             val widthChanged = digits(n) != digits(reels)
+            if (pop) plusText = "+${(n - reels).coerceAtLeast(1)}"
             reels = n
             targetHealth = BrainState.health(n) / 100f
             if (snap) {
                 shownHealth = targetHealth
                 shownCount = n.toFloat()
             }
-            if (pop) popAt = System.currentTimeMillis()
+            if (pop) popAt = System.nanoTime() / 1_000_000
             contentDescription = "Reel $n today, brain ${BrainState.health(n)}%"
             if (widthChanged) requestLayout()
         }
@@ -130,9 +134,11 @@ class BrainRotMeter(private val service: AccessibilityService) {
             val dt = if (lastFrame == 0L) 16f else (now - lastFrame).coerceIn(1, 100).toFloat()
             lastFrame = now
             // Ease the colour and the number towards their new values instead of jumping.
-            val k = 1f - exp(-dt / 260f)
+            frameMs = now
+            // The rot creeps in slowly over a couple of seconds rather than snapping.
+            val k = 1f - exp(-dt / 1_400f)
             shownHealth += (targetHealth - shownHealth) * k
-            shownCount += (reels - shownCount) * (1f - exp(-dt / 120f))
+            shownCount += (reels - shownCount) * (1f - exp(-dt / 220f))
             invalidate()
             Choreographer.getInstance().postFrameCallback(this)
         }
@@ -154,7 +160,7 @@ class BrainRotMeter(private val service: AccessibilityService) {
             rect.inset(ring.strokeWidth / 2, ring.strokeWidth / 2)
             canvas.drawRoundRect(rect, h / 2, h / 2, ring)
 
-            val now = System.currentTimeMillis()
+            val now = if (frameMs > 0) frameMs else System.nanoTime() / 1_000_000
             val sincePop = if (popAt > 0) now - popAt else -1
             val cx = padH + brainBox / 2
             val cy = h / 2
@@ -172,7 +178,7 @@ class BrainRotMeter(private val service: AccessibilityService) {
             if (sincePop in 0..800) {
                 val f = sincePop / 800f
                 plus.color = ColorUtils.setAlphaComponent(color, (255 * (1 - f)).toInt())
-                canvas.drawText("+1", cx + brainBox * 0.25f, cy - brainBox * 0.12f - f * padV * 2, plus)
+                canvas.drawText(plusText, cx + brainBox * 0.25f, cy - brainBox * 0.12f - f * padV * 2, plus)
             }
         }
     }
