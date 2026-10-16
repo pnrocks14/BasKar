@@ -10,6 +10,8 @@ import app.pratyahara.ui.components.Screen
 fun PrivacyScreen(onBack: () -> Unit) {
     Screen("Privacy policy", onBack) {
         PRIVACY_POLICY.split("\n\n").forEach { Text(it, style = MaterialTheme.typography.bodyLarge) }
+        Text("Open-source licences", style = MaterialTheme.typography.titleMedium)
+        Text(OPEN_SOURCE, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -24,3 +26,7 @@ Sensors: the accelerometer is used only while the squat screen is open, to count
 Children: BasKar is not directed at children under 13.
 
 Uninstalling BasKar deletes all of its data. Questions: contact the developer through the Google Play listing."""
+
+
+/** Every shipped library is Apache 2.0, which asks us to say so and point to the licence. */
+const val OPEN_SOURCE = """BasKar is built with Android Jetpack (AndroidX: Compose, Navigation, Lifecycle, DataStore, WorkManager and Core), Kotlin, kotlinx.coroutines and kotlinx.serialization. These are copyright The Android Open Source Project, Google LLC and JetBrains s.r.o., and are licensed under the Apache License, Version 2.0 (www.apache.org/licenses/LICENSE-2.0). They are used without changes."""
