@@ -116,16 +116,16 @@ fun HomeScreen(go: (String) -> Unit) {
             SoftCard(container = MaterialTheme.colorScheme.secondaryContainer) {
                 CardTitle("You can remove Android's button", Ic.Lotus, MaterialTheme.colorScheme.onSecondaryContainer)
                 Text(
-                    "Android's accessibility button for Baskar is still switched on. You don't need it: Baskar's own " +
+                    "Android's accessibility button for BasKar is still switched on. You don't need it: BasKar's own " +
                         "dark button shows up inside Instagram, YouTube and this app.",
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                 )
                 Text(
-                    "Tap below and switch off \"Baskar shortcut\", or drag the button onto \"Remove\". " +
+                    "Tap below and switch off \"BasKar shortcut\", or drag the button onto \"Remove\". " +
                         "Blocking stays on either way.",
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                 )
-                PrimaryButton("Open Baskar in Accessibility", {
+                PrimaryButton("Open BasKar in Accessibility", {
                     runCatching { context.startActivity(ServiceStatus.detailsIntent(context)) }.onFailure { context.startActivity(ServiceStatus.settingsIntent()) }
                 })
                 TextButton(onClick = { scope.launch { engine.updateSettings { it.copy(shortcutTipDismissed = true) } } }) {

@@ -205,7 +205,7 @@ fun Bullet(icon: ImageVector, text: String) {
 /** The app's own icons, drawn to match Material's. */
 object Ic {
     val Lotus: ImageVector @Composable get() = ImageVector.vectorResource(R.drawable.ic_lotus)
-    val Sun: ImageVector @Composable get() = ImageVector.vectorResource(R.drawable.ic_sun)
+    val Hand: ImageVector @Composable get() = ImageVector.vectorResource(R.drawable.ic_hand)
     val Brain: ImageVector @Composable get() = ImageVector.vectorResource(R.drawable.ic_brain)
     val Timer: ImageVector @Composable get() = ImageVector.vectorResource(R.drawable.ic_timer)
     val Eye: ImageVector @Composable get() = ImageVector.vectorResource(R.drawable.ic_eye)

@@ -71,10 +71,10 @@ fun OnboardingScreen() {
 
 @Composable
 private fun Welcome(onNext: () -> Unit) {
-    Screen("Baskar", subtitle = "The Reels limiter that's on your side") {
+    Screen("BasKar", subtitle = "The Reels limiter that's on your side") {
         IconBadge(Ic.Lotus, container = MaterialTheme.colorScheme.primaryContainer, tint = MaterialTheme.colorScheme.onPrimaryContainer, size = 64.dp)
         Text(
-            "Baskar (भास्कर) means the sun, the one that brings light. A little daylight on your scrolling, so you decide what you watch, not the algorithm.",
+            "BasKar (बस कर) is Hindi for \"enough, stop it\". It's the friend who says it when one more reel turns into fifty, so you decide what you watch, not the algorithm.",
             style = MaterialTheme.typography.bodyLarge,
         )
         SoftCard {
@@ -99,24 +99,24 @@ private fun Disclosure(onAccept: () -> Unit) {
     var agreed by remember { mutableStateOf(false) }
     Screen("Before we start", subtitle = "The important part. Please take a minute to read it.") {
         SoftCard {
-            CardTitle("Baskar uses the Accessibility Service API", Ic.Shield)
+            CardTitle("BasKar uses the Accessibility Service API", Ic.Shield)
             Text(
-                "To pause Reels and Shorts, Baskar needs Android's accessibility permission. Here's exactly what it does with it:",
+                "To pause Reels and Shorts, BasKar needs Android's accessibility permission. Here's exactly what it does with it:",
                 style = MaterialTheme.typography.bodyLarge,
             )
             Muted("• It only looks at the apps you pick (like Instagram, YouTube or TikTok). It doesn't look at any other app.")
             Muted("• Inside those apps it checks the layout of the screen, like which tab is selected and whether a full-screen video player is open, to tell if you're on Reels or Shorts.")
             Muted("• It never reads, saves or sends your messages, posts, searches or anything else on screen. Screen content is checked in memory and discarded right away.")
             Muted("• The only things it saves are counts: minutes on Reels and Shorts, how often you opened them, and how often they were paused or unlocked.")
-            Muted("• Nothing leaves your phone. Baskar has no internet permission at all.")
-            Muted("• It uses the permission to show the pause screen, the breathing pause, small check-ins and the floating Baskar button on top of those apps, and to press Back for you when you tap \"Back to the feed\".")
+            Muted("• Nothing leaves your phone. BasKar has no internet permission at all.")
+            Muted("• It uses the permission to show the pause screen, the breathing pause, small check-ins and the floating BasKar button on top of those apps, and to press Back for you when you tap \"Back to the feed\".")
         }
         Row(
             Modifier.fillMaxWidth().toggleable(value = agreed, role = Role.Checkbox, onValueChange = { agreed = it }),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Checkbox(checked = agreed, onCheckedChange = null)
-            Text("I understand and agree to Baskar using the accessibility permission this way.", style = MaterialTheme.typography.bodyMedium)
+            Text("I understand and agree to BasKar using the accessibility permission this way.", style = MaterialTheme.typography.bodyMedium)
         }
         PrimaryButton("Agree and continue", enabled = agreed, onClick = {
             scope.launch {
@@ -192,7 +192,7 @@ private fun Permissions() {
     Screen("Three quick switches", subtitle = "Then you're all set") {
         SoftCard {
             CardTitle("1. Accessibility", Icons.Rounded.Lock)
-            Muted("Find Baskar in the list (it may be under \"Downloaded apps\") and switch it on. Greyed out? Go to Settings, Apps, Baskar, tap the three dots and choose \"Allow restricted settings\" first.")
+            Muted("Find BasKar in the list (it may be under \"Downloaded apps\") and switch it on. Greyed out? Go to Settings, Apps, BasKar, tap the three dots and choose \"Allow restricted settings\" first.")
             if (serviceOn) Done("Switched on")
             else SecondaryButton("Open accessibility settings", {
                 runCatching { context.startActivity(ServiceStatus.detailsIntent(context)) }.onFailure { context.startActivity(ServiceStatus.settingsIntent()) }
@@ -208,7 +208,7 @@ private fun Permissions() {
         }
         SoftCard {
             CardTitle("3. Battery", Icons.Rounded.Settings)
-            Muted("Some phones stop background apps to save battery, which quietly turns blocking off. Set Baskar to \"Unrestricted\".")
+            Muted("Some phones stop background apps to save battery, which quietly turns blocking off. Set BasKar to \"Unrestricted\".")
             SecondaryButton("Open battery settings", {
                 runCatching {
                     context.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))

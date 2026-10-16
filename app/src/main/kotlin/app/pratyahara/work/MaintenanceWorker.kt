@@ -35,7 +35,7 @@ class MaintenanceWorker(context: Context, params: WorkerParameters) : CoroutineW
         if (d.blockingEnabled && !ServiceStatus.isEnabled(ctx)) {
             Notifier.alert(
                 ctx, Notifier.ID_SERVICE_OFF,
-                "Baskar was switched off",
+                "BasKar was switched off",
                 "The accessibility permission is off, so Reels and Shorts aren't being limited. Tap to turn it back on.",
                 route = "home",
             )
@@ -79,7 +79,7 @@ class MaintenanceWorker(context: Context, params: WorkerParameters) : CoroutineW
                 }
                 append("${r.daysWithinLimit} of ${r.daysCounted} days within your limit.")
             }
-            Notifier.reminder(ctx, Notifier.ID_WEEKLY, "Your week with Baskar", text, route = "summary")
+            Notifier.reminder(ctx, Notifier.ID_WEEKLY, "Your week with BasKar", text, route = "summary")
             engine.store.update { it.copy(lastWeeklyReport = todayKey) }
         }
 
