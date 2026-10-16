@@ -124,7 +124,7 @@ fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifi
     ) { Text(text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center) }
 }
 
-/** The loud one: lime, for the single action a screen is about. */
+/** The loud one: sun yellow, for the single action a screen is about. */
 @Composable
 fun AccentButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     Button(
@@ -205,6 +205,8 @@ fun Bullet(icon: ImageVector, text: String) {
 /** The app's own icons, drawn to match Material's. */
 object Ic {
     val Lotus: ImageVector @Composable get() = ImageVector.vectorResource(R.drawable.ic_lotus)
+    val Sun: ImageVector @Composable get() = ImageVector.vectorResource(R.drawable.ic_sun)
+    val Brain: ImageVector @Composable get() = ImageVector.vectorResource(R.drawable.ic_brain)
     val Timer: ImageVector @Composable get() = ImageVector.vectorResource(R.drawable.ic_timer)
     val Eye: ImageVector @Composable get() = ImageVector.vectorResource(R.drawable.ic_eye)
     val Shield: ImageVector @Composable get() = ImageVector.vectorResource(R.drawable.ic_shield)
@@ -264,7 +266,7 @@ fun Ring(
 }
 
 /**
- * One bar per day with a dashed line at the limit. Bars over the limit turn coral, today's is lime.
+ * One bar per day with a dashed line at the limit. Bars over the limit turn coral, today's is sun yellow.
  * [values] are minutes, oldest first.
  */
 @Composable

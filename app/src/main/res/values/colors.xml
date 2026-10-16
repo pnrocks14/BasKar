@@ -3,8 +3,8 @@
     <!-- Window background before Compose draws; matches the Compose theme in ui/theme/Theme.kt. -->
     <color name="surface">#F5F4EF</color>
     <color name="launcher_bg">#111111</color>
-    <color name="lime">#D4F76A</color>
-    <color name="on_lime">#141A00</color>
+    <color name="sun">#FFB547</color>
+    <color name="on_sun">#2B1600</color>
 
     <!-- The pause screen is always dark. -->
     <color name="overlay_bg">#F70D0D0F</color>

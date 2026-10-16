@@ -35,6 +35,19 @@ class LockPolicyTest {
         assertFalse(LockPolicy.canEarnUnlock(spent))
     }
 
+    @Test fun `a reel limit closes Reels even with minutes left`() {
+        val limited = base.copy(reelLimit = 50, reelsToday = 50)
+        assertEquals(LockState.BudgetLocked(unlocksLeft = 2, byReels = true), LockPolicy.evaluate(limited))
+        assertEquals(LockState.Allowed(30 * 60L), LockPolicy.evaluate(limited.copy(reelsToday = 49)))
+        assertEquals(LockState.Allowed(30 * 60L), LockPolicy.evaluate(limited.copy(reelLimit = 0)))
+    }
+
+    @Test fun `a squat pass adds ten reels`() {
+        val s = LockPolicy.evaluate(base.copy(reelLimit = 30, reelsToday = 35, unlocksUsedToday = 1))
+        assertTrue(s is LockState.Allowed)
+        assertTrue(LockPolicy.evaluate(base.copy(reelLimit = 30, reelsToday = 40, unlocksUsedToday = 1)) is LockState.BudgetLocked)
+    }
+
     @Test fun `cooldown blocks even with time left`() {
         val s = LockPolicy.evaluate(base.copy(cooldownUntilMillis = 5_000))
         assertEquals(LockState.Cooldown(5_000), s)

@@ -12,6 +12,8 @@ enum class ChangeType {
     DISABLE_BLOCKING,
     /** value = new squat count */
     LOWER_SQUATS,
+    /** value = new reel limit; 0 turns it off */
+    RAISE_REEL_LIMIT,
 }
 
 /**

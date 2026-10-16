@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Baskar's sun: a round sun with eight short rays. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp" android:height="24dp"
     android:viewportWidth="24" android:viewportHeight="24">
-    <path android:fillColor="#FFFFFF" android:pathData="M12,4 C14,6.5 14.6,9.5 12,14 C9.4,9.5 10,6.5 12,4 Z" />
-    <path android:fillColor="#FFFFFF" android:pathData="M6,8 C9,8.6 11,11 11,14 C8,13.4 6,11.6 6,8 Z" />
-    <path android:fillColor="#FFFFFF" android:pathData="M18,8 C15,8.6 13,11 13,14 C16,13.4 18,11.6 18,8 Z" />
-    <path android:fillColor="#FFFFFF" android:pathData="M5,16 L19,16 L19,17.5 L5,17.5 Z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M7.40,12.00 a4.60,4.60 0 1,0 9.20,0 a4.60,4.60 0 1,0 -9.20,0 Z" />
+    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="2" android:strokeLineCap="round"
+        android:pathData="M19.40,12.00 L22.00,12.00 M17.23,17.23 L19.07,19.07 M12.00,19.40 L12.00,22.00 M6.77,17.23 L4.93,19.07 M4.60,12.00 L2.00,12.00 M6.77,6.77 L4.93,4.93 M12.00,4.60 L12.00,2.00 M17.23,6.77 L19.07,4.93" />
 </vector>

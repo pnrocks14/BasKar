@@ -58,6 +58,8 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
+import app.pratyahara.core.reels.BrainState
+import app.pratyahara.ui.components.BrainDoodle
 
 @Composable
 fun HomeScreen(go: (String) -> Unit) {
@@ -114,16 +116,16 @@ fun HomeScreen(go: (String) -> Unit) {
             SoftCard(container = MaterialTheme.colorScheme.secondaryContainer) {
                 CardTitle("You can remove Android's button", Ic.Lotus, MaterialTheme.colorScheme.onSecondaryContainer)
                 Text(
-                    "Android's accessibility button for Pratyahara is still switched on. You don't need it: Pratyahara's own " +
+                    "Android's accessibility button for Baskar is still switched on. You don't need it: Baskar's own " +
                         "dark button shows up inside Instagram, YouTube and this app.",
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                 )
                 Text(
-                    "Tap below and switch off \"Pratyahara shortcut\", or drag the button onto \"Remove\". " +
+                    "Tap below and switch off \"Baskar shortcut\", or drag the button onto \"Remove\". " +
                         "Blocking stays on either way.",
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                 )
-                PrimaryButton("Open Pratyahara in Accessibility", {
+                PrimaryButton("Open Baskar in Accessibility", {
                     runCatching { context.startActivity(ServiceStatus.detailsIntent(context)) }.onFailure { context.startActivity(ServiceStatus.settingsIntent()) }
                 })
                 TextButton(onClick = { scope.launch { engine.updateSettings { it.copy(shortcutTipDismissed = true) } } }) {
@@ -142,17 +144,17 @@ fun HomeScreen(go: (String) -> Unit) {
 
         HeroCard(state, data, usage.totalSeconds, usage.unlocks, go)
 
+        BrainCard(usage.reels, data.reelLimit)
+
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            StatTile(Ic.Eye, "${usage.visits}", "Reels trips", Modifier.weight(1f))
-            StatTile(Ic.Shield, "${usage.blocks}", "Times I stepped in", Modifier.weight(1f))
+            StatTile(Ic.Eye, "${usage.visits}", "Trips", Modifier.weight(1f))
+            StatTile(Ic.Shield, "${usage.blocks}", "Stopped", Modifier.weight(1f))
             StatTile(Ic.Fitness, "${usage.unlocks}/${UnlockRules.MAX_UNLOCKS_PER_DAY}", "Squat passes", Modifier.weight(1f))
         }
 
         WeekCard(engine.recentDays(data).map { (day, u) -> day to (u.totalSeconds / 60).toInt() }, data.budgetMinutes, engine.weekSavedMinutes(data))
 
         TaskCard(gate, awaiting?.text, data, today.toString(), hour, go)
-
-        AppsCard(data, usage.secondsByApp)
 
         if (data.pending.isNotEmpty()) {
             SoftCard {
@@ -164,6 +166,7 @@ fun HomeScreen(go: (String) -> Unit) {
                         ChangeType.REMOVE_APP -> "Stop limiting ${DetectionRules.appName(c.value)}"
                         ChangeType.DISABLE_BLOCKING -> "Turn blocking off"
                         ChangeType.LOWER_SQUATS -> "Squats to ${c.value}"
+                        ChangeType.RAISE_REEL_LIMIT -> if (c.value == "0") "No reel limit" else "Reel limit to ${c.value}"
                     }
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Muted("$what · in ${formatWait(c.remainingMillis(engine.stamp()))}", Modifier.weight(1f))
@@ -175,8 +178,7 @@ fun HomeScreen(go: (String) -> Unit) {
 
         val quote = remember(today) { Quotes.ofDay(today.toEpochDay()) }
         SoftCard(container = MaterialTheme.colorScheme.secondaryContainer) {
-            CardTitle("Today's thought", Ic.Quote, MaterialTheme.colorScheme.onSecondaryContainer)
-            Text(quote.text, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSecondaryContainer)
+            Text(quote.text, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
             Text("— ${quote.source}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.75f))
         }
 
@@ -209,17 +211,17 @@ private fun HeroCard(state: LockState, data: AppData, usedSeconds: Long, unlocks
             )
             val (headline, body) = when (state) {
                 is LockState.Allowed -> when {
-                    used < 0.5f -> "You're doing great" to "Reels and Shorts are open. I'll check in while you scroll."
-                    used < 0.85f -> "Nice pacing" to "You're past the halfway mark for today."
-                    else -> "Almost out, time to wrap up" to "Just a few minutes left for today."
+                    used < 0.5f -> "Doing great" to "Reels are open. I'm keeping count."
+                    used < 0.85f -> "Nice pacing" to "Past halfway for today."
+                    else -> "Almost out" to "A few minutes left. Wrap it up."
                 }
-                is LockState.BudgetLocked -> "Reels are done for today" to "Your feed, messages and profile still work. See you tomorrow."
-                is LockState.TaskLocked -> "Reels are waiting on one task" to
-                    if (state.gate == TaskGate.MISSED_CHECKIN) "Answer yesterday's check-in, then write one task. That's it."
-                    else "Write one clear task. The moment it's saved, they're back."
+                is LockState.BudgetLocked -> (if (state.byReels) "Reel limit reached" else "Done for today") to "Feed, messages and profile still work."
+                is LockState.TaskLocked -> "One task first" to
+                    if (state.gate == TaskGate.MISSED_CHECKIN) "Answer yesterday's check-in, then write a task."
+                    else "Write one task and Reels are back."
                 is LockState.Cooldown -> "Take a breath" to "Reels open in a few seconds."
-                is LockState.FocusLocked -> "Focus hours are on" to "Reels and Shorts are closed until ${FocusHours.format(state.endMinute)}. Everything else works."
-                LockState.Disabled -> "Blocking is off" to "Time still counts. Turn it back on in Settings and it applies right away."
+                is LockState.FocusLocked -> "Focus hours" to "Reels closed until ${FocusHours.format(state.endMinute)}."
+                LockState.Disabled -> "Blocking is off" to "Time still counts. Turn it on in Settings."
             }
             Text(headline, style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
             Muted(body)
@@ -227,6 +229,31 @@ private fun HeroCard(state: LockState, data: AppData, usedSeconds: Long, unlocks
                 state is LockState.BudgetLocked && state.unlocksLeft > 0 ->
                     AccentButton("Earn ${UnlockRules.UNLOCK_MINUTES} min with ${data.squats} squats", { go(Routes.UNLOCK) })
                 state is LockState.TaskLocked -> AccentButton("Write my task", { go(Routes.TASK) })
+            }
+        }
+    }
+}
+
+/** Today's reels and how fried the brain is, with a straight-faced joke. */
+@Composable
+private fun BrainCard(reels: Int, reelLimit: Int) {
+    val health = BrainState.health(reels)
+    val state = BrainState.of(reels)
+    SoftCard {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            BrainDoodle(health)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(if (reels == 1) "1 reel today" else "$reels reels today", style = MaterialTheme.typography.titleLarge)
+                Text("Brain $health% · ${state.label}", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Muted(
+                    when (state) {
+                        BrainState.FRESH -> "Sharp as ever."
+                        BrainState.FOGGY -> "A little foggy. Maybe stretch?"
+                        BrainState.MUSHY -> "Going soft. Time for real life."
+                        BrainState.MELTING -> "It's melting. Put the phone down."
+                        BrainState.ROTTEN -> "Full brain rot. Tomorrow's a new brain."
+                    } + if (reelLimit > 0) " ${(reelLimit - reels).coerceAtLeast(0)} of $reelLimit reels left." else "",
+                )
             }
         }
     }
@@ -241,7 +268,7 @@ private fun WeekCard(days: List<Pair<java.time.LocalDate, Int>>, limit: Int, sav
         }
         val minutes = days.map { it.second }
         val active = minutes.filter { it > 0 }
-        Muted(if (active.isEmpty()) "Nothing yet. A clean week so far." else "Average ${active.sum() / active.size} min a day. The dashed line is your $limit min limit.")
+        Muted(if (active.isEmpty()) "A clean week so far." else "${active.sum() / active.size} min a day on average. Dashed line: your limit.")
         WeekBars(
             values = minutes,
             labels = days.map { it.first.dayOfWeek.getDisplayName(TextStyle.NARROW, Locale.getDefault()) },
@@ -270,26 +297,6 @@ private fun TaskCard(gate: TaskGate, awaitingText: String?, data: AppData, today
             PrimaryButton(if (awaitingText != null) "Answer" else "Write it", { go(Routes.TASK) })
         } else {
             Muted("All set for tonight. Sleep well.")
-        }
-    }
-}
-
-@Composable
-private fun AppsCard(data: AppData, secondsByApp: Map<String, Long>) {
-    val apps = data.monitored.map { DetectionRules.appName(it) }.distinct()
-    if (apps.isEmpty()) return
-    SoftCard {
-        CardTitle("Today by app", Ic.Phone)
-        val total = secondsByApp.values.sum().coerceAtLeast(1)
-        apps.forEach { name ->
-            val secs = DetectionRules.all.filter { it.appName == name }.sumOf { secondsByApp[it.packageName] ?: 0L }
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Row(Modifier.fillMaxWidth()) {
-                    Text(name, modifier = Modifier.weight(1f), fontWeight = FontWeight.SemiBold)
-                    Text(formatMinutes(secs), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                app.pratyahara.ui.components.Meter(secs.toFloat() / total, color = MaterialTheme.colorScheme.onSurface)
-            }
         }
     }
 }

@@ -1,14 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- A simple lotus: three petals over a calm horizon line. -->
+<!-- Baskar: the sun over a calm horizon line. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#D4F76A"
-        android:pathData="M54,32 C60,40 62,50 54,64 C46,50 48,40 54,32 Z" />
-    <path android:fillColor="#D4F76A" android:fillAlpha="0.75"
-        android:pathData="M36,44 C46,46 52,54 52,64 C42,62 36,56 36,44 Z" />
-    <path android:fillColor="#D4F76A" android:fillAlpha="0.75"
-        android:pathData="M72,44 C62,46 56,54 56,64 C66,62 72,56 72,44 Z" />
-    <path android:fillColor="#D4F76A"
-        android:pathData="M34,70 L74,70 L74,73 L34,73 Z" />
+    <path android:fillColor="#FFB547" android:pathData="M41.00,52.00 a13.00,13.00 0 1,0 26.00,0 a13.00,13.00 0 1,0 -26.00,0 Z" />
+    <path android:strokeColor="#FFB547" android:strokeWidth="4.5" android:strokeLineCap="round"
+        android:pathData="M73.00,52.00 L80.00,52.00 M67.44,65.44 L72.38,70.38 M54.00,71.00 L54.00,78.00 M40.56,65.44 L35.62,70.38 M35.00,52.00 L28.00,52.00 M40.56,38.56 L35.62,33.62 M54.00,33.00 L54.00,26.00 M67.44,38.56 L72.38,33.62" />
+    <path android:fillColor="#FFB547" android:pathData="M30,80 L78,80 L78,84.5 L30,84.5 Z" />
 </vector>

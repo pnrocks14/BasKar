@@ -25,8 +25,8 @@
             android:background="@drawable/overlay_icon_bg"
             android:contentDescription="@null"
             android:padding="13dp"
-            android:src="@drawable/ic_lotus"
-            android:tint="@color/on_lime" />
+            android:src="@drawable/ic_sun"
+            android:tint="@color/on_sun" />
 
         <TextView
             android:id="@+id/title"
@@ -70,7 +70,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                android:textColor="@color/lime"
+                android:textColor="@color/sun"
                 android:textSize="13sp" />
         </LinearLayout>
 
@@ -85,7 +85,7 @@
             android:minHeight="56dp"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
-            android:textColor="@color/on_lime"
+            android:textColor="@color/on_sun"
             android:textSize="17sp"
             android:textStyle="bold" />
 

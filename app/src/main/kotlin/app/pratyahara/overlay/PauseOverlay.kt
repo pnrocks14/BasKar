@@ -50,7 +50,7 @@ class PauseOverlay(
         }
         val icon = ImageView(service).apply {
             setImageResource(R.drawable.ic_lotus)
-            setColorFilter(service.getColor(R.color.on_lime))
+            setColorFilter(service.getColor(R.color.on_sun))
             setBackgroundResource(R.drawable.overlay_icon_bg)
             setPadding(dp(22), dp(22), dp(22), dp(22))
         }
@@ -59,7 +59,7 @@ class PauseOverlay(
         column.addView(text(content.body, 17f, bold = false, muted = true).apply { gravity = Gravity.CENTER }, block(top = 12))
         val breathe = text("Breathe in", 15f, bold = false, muted = false).apply {
             gravity = Gravity.CENTER
-            setTextColor(service.getColor(R.color.lime))
+            setTextColor(service.getColor(R.color.sun))
         }
         column.addView(breathe, block(top = 20))
 
@@ -144,7 +144,7 @@ class PauseOverlay(
         minHeight = dp(56)
         setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f)
         setBackgroundResource(if (primary) R.drawable.overlay_button_primary else R.drawable.overlay_button_secondary)
-        setTextColor(service.getColor(if (primary) R.color.on_lime else R.color.overlay_text))
+        setTextColor(service.getColor(if (primary) R.color.on_sun else R.color.overlay_text))
         if (primary) typeface = Typeface.DEFAULT_BOLD
     }
 
