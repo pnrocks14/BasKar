@@ -64,20 +64,6 @@ Squat counting: hold the phone against your chest with both hands. Shaking the p
 
 See [docs/detection-rules.md](docs/detection-rules.md). In short: everything lives in `DetectionRules.kt`; check the Detection check screen on a phone, adjust labels/IDs/weights, add a fixture to `DetectionRulesTest`, and ship.
 
-## Releasing to Google Play
-
-1. Create an upload key once: `keytool -genkey -v -keystore upload.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload`. Keep it out of git.
-2. Create `keystore.properties` in the project root (ignored by git):
-   ```
-   storeFile=upload.jks
-   storePassword=...
-   keyAlias=upload
-   keyPassword=...
-   ```
-3. `./gradlew :app:bundleRelease` → `app/build/outputs/bundle/release/app-release.aab`.
-4. In Play Console: create the app, fill in the **Accessibility API declaration** and **Data safety** form using [docs/play](docs/play), host the privacy policy at a public URL, and upload the bundle to an internal testing track first.
-5. Bump `versionCode` in `app/build.gradle.kts` for every upload.
-
 ## Privacy
 
 See [docs/play/privacy-policy.md](docs/play/privacy-policy.md). The app declares no `INTERNET` permission (and strips it if a library tries to add one), excludes all data from backup, and keeps 60 days of counters on the device.
