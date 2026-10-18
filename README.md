@@ -11,6 +11,11 @@ BasKar (बस कर) is Hindi for "enough, stop it". The code still uses its f
 - **Tamper resistance.** Disabling blocking, removing an app or lowering squats waits 24 hours, with a cancel button. If the accessibility permission is turned off, you get a notification within ~15 minutes.
 - **Private by construction.** No internet permission, no analytics, no backups. Screen content is scored in memory and discarded.
 
+## Download
+
+- **Indus Appstore:** coming soon, search for BasKar.
+- **Direct download:** [BasKar-1.0.0.apk](https://github.com/pnrocks14/BasKar/releases/download/v1.0.0/BasKar-1.0.0.apk) for Android 8 and newer. Open it on your phone, allow installs from your browser if asked, then turn BasKar on in Settings → Accessibility.
+
 ## Project layout
 
 ```
@@ -41,8 +46,8 @@ CI also runs `app/src/androidTest` on an emulator: onboarding, the budget and ta
 
 Accessibility services need a physical phone (recommended) or an emulator with Google Play and the target apps installed.
 
-1. Download [Pratyahara.apk](https://github.com/pnrocks14/Pratyahara/releases/latest/download/Pratyahara.apk) on the phone and open it (allow installs from your browser when asked), or use `adb install -r app/build/outputs/apk/debug/app-debug.apk`. Every green push to `main` refreshes that release. Its package is `app.pratyahara.beta`, so it can sit beside a Play release.
-2. Open Pratyahara, go through onboarding and turn on the accessibility service when asked. On Android 13+ sideloaded apps need one extra step first: Settings → Apps → Pratyahara → ⋮ → **Allow restricted settings**.
+1. Install the [latest BasKar APK](https://github.com/pnrocks14/BasKar/releases/download/v1.0.0/BasKar-1.0.0.apk) on the phone, or a test build from a pre-release on the Releases page. Test builds use the package `app.pratyahara.beta`, so they sit beside the public app. You can also use `adb install -r app/build/outputs/apk/debug/app-debug.apk`.
+2. Open BasKar, go through onboarding and turn on the accessibility service when asked. On Android 13+ sideloaded apps need one extra step first: Settings → Apps → BasKar → ⋮ → **Allow restricted settings**.
 3. Set battery usage to **Unrestricted** (Xiaomi, Samsung, Oppo and Vivo kill background services aggressively).
 4. Open Instagram → Reels. Time should count on the home screen. To see a block without waiting 30 minutes, lower the daily limit to 5 minutes (lowering is instant).
 5. **Settings → Detection check** shows the live score and which signals matched, with no screen content.

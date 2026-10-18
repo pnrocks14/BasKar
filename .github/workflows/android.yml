@@ -163,16 +163,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="v$(sed -n 's/.*versionName = "\(.*\)".*/\1/p' app/build.gradle.kts)"
-          src=$(ls apk/*.apk | head -1)
-          cp "$src" Pratyahara.apk
-          cp "$src" "Pratyahara-$TAG.apk"
-          cp aab/*.aab "Pratyahara-$TAG-play-unsigned.aab"
-          notes="Test build for sideloading, from commit ${GITHUB_SHA::7}. Install Pratyahara.apk on your phone; see the README section \"Testing on a real phone\". Package app.pratyahara.beta, signed with the beta key, so it is not the Play Store build."
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
-            gh release upload "$TAG" Pratyahara.apk "Pratyahara-$TAG.apk" "Pratyahara-$TAG-play-unsigned.aab" --clobber --repo "$GITHUB_REPOSITORY"
-            gh release edit "$TAG" --notes "$notes" --repo "$GITHUB_REPOSITORY"
-          else
-            gh release create "$TAG" Pratyahara.apk "Pratyahara-$TAG.apk" "Pratyahara-$TAG-play-unsigned.aab" \
-              --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-              --title "Pratyahara $TAG (test build)" --notes "$notes"
+            # Published releases are edited by hand (signed APK, notes), so never touch them again.
+            echo "Release $TAG already exists, leaving it as it is."
+            exit 0
           fi
+          src=$(ls apk/*.apk | head -1)
+          cp "$src" "BasKar-$TAG-test.apk"
+          cp aab/*.aab "Pratyahara-$TAG-play-unsigned.aab"
+          notes="Test build from commit ${GITHUB_SHA::7}. Package app.pratyahara.beta, signed with the beta key; it won't update the public app. The signed public APK is added to this release by hand."
+          gh release create "$TAG" "BasKar-$TAG-test.apk" "Pratyahara-$TAG-play-unsigned.aab" \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
+            --title "BasKar $TAG (test build)" --notes "$notes"
